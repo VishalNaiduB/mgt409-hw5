@@ -4,6 +4,8 @@
 
 Set up AI_prompts.md with sections for Problem 1 through Problem 11 and log this prompt under Problem 1 and Problem 2. Then copy data/campus_customs.db to data/campus_customs_new.db, inspect the full schema and all rows of every table in data/campus_customs.db, print out all table contents for me to see, and start output/harness.md listing every table, its columns, and one sentence on why it matters for the agents.
 
+Note: This first prompt covered both Problem 1 and Problem 2, so it is logged under both. The part of it that set up `AI_prompts.md` itself: “Set up AI_prompts.md with sections for Problem 1 through Problem 11 and log this prompt under Problem 1 and Problem 2.”
+
 ## Problem 2
 
 Set up AI_prompts.md with sections for Problem 1 through Problem 11 and log this prompt under Problem 1 and Problem 2. Then copy data/campus_customs.db to data/campus_customs_new.db, inspect the full schema and all rows of every table in data/campus_customs.db, print out all table contents for me to see, and start output/harness.md listing every table, its columns, and one sentence on why it matters for the agents.
@@ -236,6 +238,8 @@ My reflection notes:
 
 Fix all 4 with minimal wording changes. Also apply the two smaller points: in 102, say Boss handed off only to Facilities, which brought in Accounting; and in Section 4, add one sentence noting these assume a ticket row exists (there’s no tool to create tickets) and that the multi-size bundle would use read_table on inventory, since quote_bulk_order covers one SKU and size per ticket. Keep everything else as I wrote it, then commit as “P10”.
 
+Note: The first pass contained four claims that didn’t match the audit trail.
+
 ## Problem 11
 
 Problem 11, final submission. First check whether the GitHub CLI is installed and signed in (`gh auth status`). If it isn’t, stop and tell me what to run. If it is, create a public repo named `mgt409-hw5` under my account, without pushing yet.
@@ -250,3 +254,21 @@ Problem 11, final submission. First check whether the GitHub CLI is installed an
 Then show me `git status`, the pushed commit list, and the zip’s contents.
 
 Note: The two marker words in item 4 are redacted in this log so the repository contains neither of them; the rest of the prompt is word for word.
+
+### Final fixes
+
+Small final fixes, no agent runs and no database changes:
+
+1. In `AI_prompts.md`, under Problem 1, add a note that my first prompt covered both P1 and P2, and quote the part of it that set up `AI_prompts.md` itself. Under the P10 follow-up, add one sentence: “The first pass contained four claims that didn’t match the audit trail.”
+2. Add `captured_at` and a note to `output/mcp_smoke.json` saying the outputs were captured on the freshly reset database before the P9 runs, so they won’t match the post-run `campus_customs_new.db`.
+3. In the harness’s audit section, add one line explaining that scripted test entries were deliberately kept out of `audit_trail.json`, which holds only the real P9 runs.
+4. In the Reflection tab of `output/desk_tickets.html`, add this as a new subsection at the start of Section 1, before the per-ticket notes. Keep my wording; format it to match the tab (a small criteria table is fine). Do not change anything else in the tab.
+
+How I evaluated the agents. I judged each run against five criteria: (1) Boss’s first routing was right for the ticket type; (2) no specialist was woken without a reason; (3) the money outcome was correct, meaning the exact amount staged, or correctly nothing; (4) any customer-facing reply was honest, with no promise the data couldn’t back; (5) the run stayed well inside the 35-request budget.
+
+* Ticket 101 met all five: Inventory first, Facilities left out, exactly $840.00 staged for Invoice 501, a reply to Tauhid that promised no shipment and gave the 5-day lead time, and 13 of 35 requests. One caveat: this run was most likely a gateway cache replay, so it shows the system works but not that the model would reason the same way twice.
+* Ticket 102 met all five, and was the most efficient: Facilities first, only one specialist-to-specialist handoff, exactly $2,400.00 staged for Lease 1, no customer reply needed, and 10 of 35 requests.
+* Ticket 103 met all five, and was the hardest test, because the right answer was to spend nothing: Inventory first, Facilities left out, nothing staged with uncommitted cash $104.00 short of the $264.00 restock, a $49.00 quote above the $22.00 cost floor, two honest options for the Yale AI Club, and 12 of 35 requests.
+* The limit of this evaluation is that it rests on one run per ticket. A real business would want each ticket re-run several times with caching off, to check the agents make the same decisions consistently before trusting them with real money.
+
+Then commit as “Final fixes” and push. Show me `git log --oneline -3` and confirm the push.

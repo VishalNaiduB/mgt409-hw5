@@ -146,6 +146,8 @@ Every agent-loop step is appended to `output/audit_trail.json`, a single JSON ar
 - the delegation `depth`;
 - `requests_used` so far in the run.
 
+Scripted test entries were deliberately kept out of `audit_trail.json`: every scripted-model test wrote to a scratch file instead, so the trail holds only the real P9 runs of tickets 101, 102 and 103.
+
 ## Results of the real runs
 
 Tickets 101, 102 and 103 were run on the dashboard in that order after a reset, with real `gpt-6-luna` agents. Vishal approved both staged payments.

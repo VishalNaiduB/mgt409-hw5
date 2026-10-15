@@ -88,6 +88,12 @@
   .stub { text-align: center; padding: 56px 20px; }
   .stub p { color: var(--muted); margin: 6px 0 0; }
 
+  .refl-eval { margin: 0 0 18px; padding-bottom: 16px; border-bottom: 1px dashed var(--line); }
+  .refl-eval h4 { margin: 0 0 6px; font-size: 16px; }
+  .refl-eval p { margin: 0 0 8px; color: #dcdce2; }
+  table.criteria { width: 100%; border-collapse: collapse; margin: 0 0 14px; }
+  table.criteria th, table.criteria td { text-align: left; vertical-align: top; padding: 7px 10px; border-top: 1px solid var(--line); }
+  table.criteria th { width: 1%; white-space: nowrap; color: var(--pink); font-family: var(--mono); font-weight: 600; }
   .refl ul { margin: 0; padding-left: 20px; }
   .refl li { margin-bottom: 12px; color: #dcdce2; }
   .refl li:last-child { margin-bottom: 0; }
@@ -407,6 +413,25 @@
 
     <section class="block refl" aria-labelledby="refl-1">
       <div class="block-head"><h3 id="refl-1">1. Agent Performance &amp; Human Approvals on Each Ticket (101, 102, 103)</h3></div>
+      <div class="refl-eval" aria-labelledby="refl-1-eval">
+        <h4 id="refl-1-eval">How I evaluated the agents</h4>
+        <p>I judged each run against five criteria:</p>
+        <table class="criteria">
+          <tbody>
+            <tr><th scope="row">(1)</th><td>Boss’s first routing was right for the ticket type</td></tr>
+            <tr><th scope="row">(2)</th><td>no specialist was woken without a reason</td></tr>
+            <tr><th scope="row">(3)</th><td>the money outcome was correct, meaning the exact amount staged, or correctly nothing</td></tr>
+            <tr><th scope="row">(4)</th><td>any customer-facing reply was honest, with no promise the data couldn’t back</td></tr>
+            <tr><th scope="row">(5)</th><td>the run stayed well inside the 35-request budget</td></tr>
+          </tbody>
+        </table>
+        <ul>
+          <li><strong>Ticket 101</strong> met all five: Inventory first, Facilities left out, exactly $840.00 staged for Invoice 501, a reply to Tauhid that promised no shipment and gave the 5-day lead time, and 13 of 35 requests. One caveat: this run was most likely a gateway cache replay, so it shows the system works but not that the model would reason the same way twice.</li>
+          <li><strong>Ticket 102</strong> met all five, and was the most efficient: Facilities first, only one specialist-to-specialist handoff, exactly $2,400.00 staged for Lease 1, no customer reply needed, and 10 of 35 requests.</li>
+          <li><strong>Ticket 103</strong> met all five, and was the hardest test, because the right answer was to spend nothing: Inventory first, Facilities left out, nothing staged with uncommitted cash $104.00 short of the $264.00 restock, a $49.00 quote above the $22.00 cost floor, two honest options for the Yale AI Club, and 12 of 35 requests.</li>
+          <li>The limit of this evaluation is that it rests on one run per ticket. A real business would want each ticket re-run several times with caching off, to check the agents make the same decisions consistently before trusting them with real money.</li>
+        </ul>
+      </div>
       <ul>
         <li>Overall, the 5-agent team handled all three tickets accurately without violating a single shop or cash constraint, moving checking from $3,400.00 down to $160.00 across two human-approved payments.</li>
         <li><strong>Ticket 101</strong> (Tauhid Zaman, 1x CC-TEE-WHITE size S): Performed well. Inventory caught that size S was at 0 stock in Aisle B and tied it to unpaid Invoice 501 ($840.00 to Bulldog Print Co, due 2026-08-28, 3 days overdue against desk.date_today 2026-08-31). Accounting staged the $840.00 payment without touching cash_accounts, Customer Service gave Tauhid an honest update (5-day lead time once the reprint invoice is approved, no false shipping promise), and the ticket paused in awaiting_approval until I clicked Approve on the board, which dropped checking from $3,400.00 to $2,560.00.</li>

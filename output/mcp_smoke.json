@@ -1,6 +1,8 @@
 {
   "server": "campus-customs",
   "connected_via": ".mcp.json",
+  "captured_at": "2026-10-14T21:06:34-04:00",
+  "note": "These outputs were captured in Problem 4 on the freshly reset database (identical to data/campus_customs.db: all tickets open, $3,400.00 in checking, no payments), before the P9 runs. They won't match the post-run data/campus_customs_new.db, where checking is $160.00 and all three tickets are resolved.",
   "calls": [
     {
       "prompt": "Use the campus-customs MCP tool to check whether ticket 101 can be fulfilled.",
