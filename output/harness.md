@@ -15,3 +15,13 @@ Source: `data/campus_customs.db` (copied to `data/campus_customs_new.db`). 9 tab
 | `leases` | `id`, `space_name`, `landlord`, `monthly_rent`, `next_due`, `notes` | Lease 1 (Chapel Street shop, Elm City Properties) has $2,400.00 rent due 2026-09-02, which is exactly what ticket 102 is asking the shop to pay. |
 | `cash_accounts` | `name`, `balance`, `date` | The `checking` balance of $3,400.00 is a tight constraint: covering the $840.00 invoice 501 and the $2,400.00 rent for ticket 102 totals $3,240.00 and leaves only $160.00. |
 | `payments` | `id`, `kind`, `ref_id`, `amount`, `account`, `paid_at`, `approved_by` | Empty at start; agents only stage payment requests (for invoice 501 and the ticket 102 rent) and never write here, because a human approval is what records the row in `payments` (with `approved_by`) and deducts the amount from `cash_accounts`. |
+
+## MCP tools
+
+Server: `mcp_server/server.py` (FastMCP), reading `data/campus_customs_new.db`. Each tool takes only a `ticket_id` and looks up everything else from `tickets` and its linked rows.
+
+| Tool | Tables read | Unlocks ticket | Why it is the right tool for that ticket |
+|---|---|---|---|
+| `check_order_fulfillment` | `tickets`, `inventory`, `invoices`, `vendors`, `desk` | 101 | Ticket 101 asks for 1 CC-TEE-WHITE size S, and only this tool puts the 0 units in stock next to linked invoice 501 ($840 to Bulldog Print Co, due 2026-08-28) and the desk date of 2026-08-31, which shows the reprint behind the order is still unpaid and 3 days overdue. |
+| `check_rent_due` | `tickets`, `leases`, `desk`, `cash_accounts` | 102 | Ticket 102 is Elm City Properties' rent notice, and this tool follows its `lease_id` to lease 1's $2,400 due 2026-09-02, computes that it is 2 days from the desk date, and shows the $3,400 checking balance would drop to $1,000 after paying it. |
+| `quote_bulk_order` | `tickets`, `inventory`, `pricing`, `vendors` | 103 | Ticket 103 is Yale AI Club asking a discount on 20 CC-HOOD-NAVY size M, and this tool shows only 8 are in stock (12 short), the $22 unit cost that sets the discount floor against the $58 list price, and each vendor's lead time for restocking the gap. |

@@ -16,6 +16,15 @@ Note: The first pass of output/harness.md was too general and had the payments a
 
 ## Problem 3
 
+Build an MCP server in `mcp_server/server.py` using FastMCP that connects to `data/campus_customs_new.db` (open a fresh sqlite connection inside a context manager on each tool call so DB resets never read stale data). Do not run or connect the server yet.
+Write 3 clearly named read tools, one for each of the 3 open tickets. Each tool should take a `ticket_id` and look up everything else (sku, size, qty, invoice, lease) from the `tickets` table and the linked tables. Don’t hardcode any values; the numbers below are what the output should show for the current data, not values to put in the code.
+
+1. `check_order_fulfillment` for Ticket 101: checks `inventory`, `invoices`, `vendors`, and `desk` so an agent can see `CC-TEE-WHITE` size S is at 0 stock and linked invoice 501 ($840 to Bulldog Print Co) is overdue against `desk.date_today` (2026-08-31).
+2. `check_rent_due` for Ticket 102: checks `leases`, `desk`, and `cash_accounts` so an agent can see lease 1 ($2,400 to Elm City Properties due 2026-09-02) is due in 2 days and compare it against the $3,400 checking balance.
+3. `quote_bulk_order` for Ticket 103: checks `inventory`, `pricing`, and `vendors` so an agent can see `CC-HOOD-NAVY` size M only has 8 in stock out of the 20 requested by Yale AI Club, along with its $22 unit cost, $58 list price, and vendor lead time.
+
+Also write a short `mcp_server/README.md` explaining what the MCP server is for, that it uses `data/campus_customs_new.db`, and what the 3 tools are. Finally, add a section to `output/harness.md` listing each of the 3 tools, the exact tables it reads, which ticket (101, 102, or 103) it unlocks, and one specific sentence on why that tool is the right one for that ticket. Log this prompt under Problem 3 in `AI_prompts.md`.
+
 ## Problem 4
 
 ## Problem 5
