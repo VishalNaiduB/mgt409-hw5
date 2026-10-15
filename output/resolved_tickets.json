@@ -1,0 +1,194 @@
+{
+  "source": "Real gpt-6-luna runs in output/audit_trail.json; final state read through the campus-customs MCP tools.",
+  "shop_date": "2026-08-31",
+  "run_order": [
+    101,
+    102,
+    103
+  ],
+  "checking": {
+    "starting_balance": 3400.0,
+    "ending_balance": 160.0,
+    "pending_staged": 0
+  },
+  "tickets": [
+    {
+      "id": 101,
+      "requester": "Tauhid Zaman",
+      "type": "customer_order",
+      "final_status": "resolved",
+      "status_after_agent_run": "awaiting_approval",
+      "outcome": "CC-TEE-WHITE size S is out of stock (0 on hand). Accounting staged the overdue $840.00 rush-reprint Invoice 501 to Bulldog Print Co; Vishal approved it, which paid the invoice and resolved the ticket. Tauhid was told the tee ships about 5 days after approval.",
+      "agents": [
+        {
+          "agent": "Boss",
+          "contribution": "Read the ticket, routed it to Inventory first, and after the chain reported back confirmed the ticket was awaiting approval without resolving it.",
+          "mcp_tools": [
+            "get_ticket"
+          ]
+        },
+        {
+          "agent": "Inventory",
+          "contribution": "Found 0 of size S in Aisle B (shortfall 1) and the linked open Invoice 501 ($840, 3 days overdue, 5 lead days); handed the invoice straight to Accounting.",
+          "mcp_tools": [
+            "check_order_fulfillment"
+          ]
+        },
+        {
+          "agent": "Accounting",
+          "contribution": "Checked cash ($3,400 available) and staged payment #1, $840 for Invoice 501, for human approval, leaving $2,560 uncommitted; handed off to Customer Service.",
+          "mcp_tools": [
+            "check_available_cash",
+            "stage_payment"
+          ]
+        },
+        {
+          "agent": "Customer Service",
+          "contribution": "Confirmed the facts and told Tauhid the tee is out of stock, the $840 reprint invoice is staged for approval, and fulfillment takes 5 lead days once approved.",
+          "mcp_tools": [
+            "get_ticket",
+            "read_table",
+            "list_payments",
+            "check_available_cash"
+          ]
+        }
+      ],
+      "human_approvals": [
+        {
+          "payment_id": 1,
+          "kind": "invoice",
+          "for": "Invoice 501 (Rush reprint CC-TEE-WHITE S)",
+          "payee": "Bulldog Print Co",
+          "amount": 840.0,
+          "account": "checking",
+          "approved_by": "Vishal",
+          "paid_at": "2026-08-31"
+        }
+      ],
+      "run": {
+        "run_id": "8e2c6af1388245bca6e2004bdf2a1bd1",
+        "started_at": "2026-10-15T02:24:59.574596Z",
+        "finished_at": "2026-10-15T02:25:03.371329Z",
+        "requests_used": 13,
+        "request_limit": 35,
+        "handoffs": [
+          "Boss -> Inventory",
+          "Inventory -> Accounting",
+          "Accounting -> Customer Service"
+        ]
+      }
+    },
+    {
+      "id": 102,
+      "requester": "Elm City Properties",
+      "type": "rent_notice",
+      "final_status": "resolved",
+      "status_after_agent_run": "awaiting_approval",
+      "outcome": "The $2,400.00 Chapel Street rent for Lease 1 was due 2026-09-02 (2 days out). Accounting staged it; Vishal approved it, which paid the rent, moved the lease's next due date to 2026-10-02 and resolved the ticket.",
+      "agents": [
+        {
+          "agent": "Boss",
+          "contribution": "Read the ticket and routed the rent notice to Facilities; at the end checked the pending payment and left the ticket for human approval.",
+          "mcp_tools": [
+            "get_ticket",
+            "list_payments"
+          ]
+        },
+        {
+          "agent": "Facilities",
+          "contribution": "Confirmed Elm City Properties matches Lease 1 and that the $2,400 rent is due 2026-09-02, 2 days from the desk date; handed off to Accounting to stage it.",
+          "mcp_tools": [
+            "check_rent_due"
+          ]
+        },
+        {
+          "agent": "Accounting",
+          "contribution": "Saw $2,560 available, staged payment #2 for the $2,400 rent for human approval, leaving $160 uncommitted.",
+          "mcp_tools": [
+            "check_available_cash",
+            "stage_payment"
+          ]
+        }
+      ],
+      "human_approvals": [
+        {
+          "payment_id": 2,
+          "kind": "rent",
+          "for": "Rent for Lease 1 (Chapel Street shop)",
+          "payee": "Elm City Properties",
+          "amount": 2400.0,
+          "account": "checking",
+          "approved_by": "Vishal",
+          "paid_at": "2026-08-31"
+        }
+      ],
+      "run": {
+        "run_id": "44f6cc4a929f415ab2eb58f55c1f5f3a",
+        "started_at": "2026-10-15T02:26:33.803064Z",
+        "finished_at": "2026-10-15T02:27:08.418346Z",
+        "requests_used": 10,
+        "request_limit": 35,
+        "handoffs": [
+          "Boss -> Facilities",
+          "Facilities -> Accounting"
+        ]
+      }
+    },
+    {
+      "id": 103,
+      "requester": "Yale AI Club",
+      "type": "price_override",
+      "final_status": "resolved",
+      "status_after_agent_run": "resolved",
+      "outcome": "Only 8 of 20 CC-HOOD-NAVY size M hoodies are on hand. Accounting quoted $49.00 per hoodie ($980.00 for 20, above the $22.00 unit cost) and spent nothing: the $264.00 restock for the other 12 exceeds the $160.00 available. Customer Service offered pay-up-front or a split shipment; Boss resolved the ticket.",
+      "agents": [
+        {
+          "agent": "Boss",
+          "contribution": "Read the ticket, routed it to Inventory first, and resolved it with update_ticket, recording the quote in the ticket notes.",
+          "mcp_tools": [
+            "get_ticket",
+            "update_ticket"
+          ]
+        },
+        {
+          "agent": "Inventory",
+          "contribution": "Found 8 of 20 on hand in Aisle A (shortfall 12); restock costs $264 from Bulldog Print Co with a 5-day lead time; handed the numbers to Accounting.",
+          "mcp_tools": [
+            "quote_bulk_order"
+          ]
+        },
+        {
+          "agent": "Accounting",
+          "contribution": "Saw $160 available, said the $264 restock can't be funded now and staged nothing; set the bulk price at $49/unit ($980 total, $27 margin per unit, 15.52% below list); handed off to Customer Service.",
+          "mcp_tools": [
+            "check_available_cash",
+            "read_table"
+          ]
+        },
+        {
+          "agent": "Customer Service",
+          "contribution": "Quoted Yale AI Club $49 per hoodie ($980 for 20), confirmed 8 ready now, and explained the other 12 need a 5-day reprint that shop cash can't cover yet unless the club pays up front or splits the shipment.",
+          "mcp_tools": [
+            "get_ticket",
+            "read_table",
+            "list_payments",
+            "check_available_cash"
+          ]
+        }
+      ],
+      "human_approvals": [],
+      "run": {
+        "run_id": "3e2be993696d43ca8a21a30b3d765c53",
+        "started_at": "2026-10-15T02:27:41.661902Z",
+        "finished_at": "2026-10-15T02:28:29.583466Z",
+        "requests_used": 12,
+        "request_limit": 35,
+        "handoffs": [
+          "Boss -> Inventory",
+          "Inventory -> Accounting",
+          "Accounting -> Customer Service"
+        ]
+      }
+    }
+  ]
+}

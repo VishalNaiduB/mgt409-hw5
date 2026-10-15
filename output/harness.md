@@ -1,8 +1,24 @@
 # Harness
 
-Source: `data/campus_customs.db` (copied to `data/campus_customs_new.db`). 9 tables.
+How the Campus Customs desk fits together:
+
+```
+React dashboard (frontend/, :5173)
+   │  HTTP
+FastAPI backend (backend/main.py, :8000)
+   │  one shared MCPToolset over stdio
+   ├── 5 PydanticAI agents (backend/agents.py, gpt-6-luna via Portkey)
+   │
+FastMCP server (mcp_server/server.py)
+   │  fresh sqlite3 connection per tool call
+data/campus_customs_new.db  (working copy of data/campus_customs.db)
+```
+
+Nothing above the MCP server touches SQLite. Every shop fact the agents, the backend and the dashboard use comes through the MCP tools. Source data: `data/campus_customs.db`, which is copied to `data/campus_customs_new.db`. It has 9 tables.
 
 ## Tables
+
+The starting data, as it is after a reset. The "why it matters" notes describe the opening position the agents face.
 
 | Table | Columns | Why it matters for the agents |
 |---|---|---|
@@ -15,22 +31,6 @@ Source: `data/campus_customs.db` (copied to `data/campus_customs_new.db`). 9 tab
 | `leases` | `id`, `space_name`, `landlord`, `monthly_rent`, `next_due`, `notes` | Lease 1 (Chapel Street shop, Elm City Properties) has $2,400.00 rent due 2026-09-02, which is exactly what ticket 102 is asking the shop to pay. |
 | `cash_accounts` | `name`, `balance`, `date` | The `checking` balance of $3,400.00 is a tight constraint: covering the $840.00 invoice 501 and the $2,400.00 rent for ticket 102 totals $3,240.00 and leaves only $160.00. |
 | `payments` | `id`, `kind`, `ref_id`, `amount`, `account`, `paid_at`, `approved_by` | Empty at start. Agents can only stage a payment request (for invoice 501 and the ticket 102 rent): Accounting's `stage_payment` inserts a pending row with `paid_at` and `approved_by` empty. Only a human approval fills those in and deducts the amount from `cash_accounts`. |
-
-## Agents
-
-Five PydanticAI agents in `backend/agents.py`, all on `gpt-6-luna` through the Portkey gateway's Responses API (`/v1/responses`, reasoning on; chat completions rejects tools with reasoning), with prompts in `backend/prompts/`. They share one MCP connection to `mcp_server/server.py`: a single `MCPToolset` over stdio. PydanticAI 2.56 replaced `MCPServerStdio` with `MCPToolset`. Each agent sees a filtered view of that connection with only its role's tools.
-
-Every agent has the 6 shared read tools: `get_ticket`, `list_tickets`, `list_tables`, `read_table`, `check_available_cash`, `list_payments`.
-
-| Agent | Role tools (on top of the read tools) | Can delegate to | Job |
-|---|---|---|---|
-| Boss | `update_ticket` (the only agent with it) | Inventory, Accounting, Facilities, Customer Service | Routes each ticket by type (101 and 103 to Inventory, 102 to Facilities) and closes it out. Resolves a ticket only when no money is moving. |
-| Inventory | `check_order_fulfillment`, `quote_bulk_order` | Boss, Accounting, Facilities, Customer Service | Checks stock for the exact SKU and size, the shortfall, and the restock cost and lead time. Hands off to Accounting. |
-| Accounting | `stage_payment` (the only agent with it) | Boss, Inventory, Facilities, Customer Service | Checks uncommitted cash, stages invoice and rent payments for human approval, and sets bulk prices above `unit_cost`. Hands off to Customer Service. |
-| Facilities | `check_rent_due` | Boss, Inventory, Accounting, Customer Service | Confirms the lease, rent and due date against the desk date. Hands off to Accounting to stage the rent. |
-| Customer Service | none | Boss, Inventory, Accounting, Facilities | Writes the customer reply for 101 and 103, without promising shipment while stock is 0 or a payment awaits approval. |
-
-Every agent can delegate to every other (20 one-way links) through `delegate_to_<agent>` tools.
 
 ## MCP tools
 
@@ -60,9 +60,57 @@ Each ticket tool takes only a `ticket_id` and looks up everything else from `tic
 |---|---|---|---|
 | `check_order_fulfillment` | `tickets`, `inventory`, `invoices`, `vendors`, `desk` | 101 | Ticket 101 asks for 1 CC-TEE-WHITE size S, and only this tool puts the 0 units in stock next to linked invoice 501 ($840 to Bulldog Print Co, due 2026-08-28) and the desk date of 2026-08-31, which shows the reprint behind the order is still unpaid and 3 days overdue. |
 | `check_rent_due` | `tickets`, `leases`, `desk`, `cash_accounts` | 102 | Ticket 102 is Elm City Properties' rent notice, and this tool follows its `lease_id` to lease 1's $2,400 due 2026-09-02, computes that it is 2 days from the desk date, and shows the $3,400 checking balance would drop to $1,000 after paying it. |
-| `quote_bulk_order` | `tickets`, `inventory`, `pricing`, `vendors` | 103 | Ticket 103 is Yale AI Club asking a discount on 20 CC-HOOD-NAVY size M, and this tool shows only 8 are in stock (12 short), the $22 unit cost that sets the discount floor against the $58 list price, and each vendor's lead time for restocking the gap. |
+| `quote_bulk_order` | `tickets`, `inventory`, `pricing`, `vendors`, `desk` | 103 | Ticket 103 is Yale AI Club asking a discount on 20 CC-HOOD-NAVY size M, and this tool shows only 8 are in stock (12 short), the $22 unit cost that sets the discount floor against the $58 list price, and each vendor's lead time for restocking the gap. |
 
-## Safety
+## The five agents
+
+Five PydanticAI agents in `backend/agents.py`, all on `gpt-6-luna` through the Portkey gateway's Responses API (`/v1/responses`, reasoning on; chat completions rejects tools with reasoning), with prompts in `backend/prompts/`. They share one MCP connection to `mcp_server/server.py`: a single `MCPToolset` over stdio. PydanticAI 2.56 replaced `MCPServerStdio` with `MCPToolset`. Each agent sees a filtered view of that connection with only its role's tools.
+
+Every agent has the 6 shared read tools: `get_ticket`, `list_tickets`, `list_tables`, `read_table`, `check_available_cash`, `list_payments`.
+
+| Agent | Role tools (on top of the read tools) | Can delegate to | Job |
+|---|---|---|---|
+| Boss | `update_ticket` (the only agent with it) | Inventory, Accounting, Facilities, Customer Service | Routes each ticket by type (101 and 103 to Inventory, 102 to Facilities) and closes it out. Resolves a ticket only when no money is moving. |
+| Inventory | `check_order_fulfillment`, `quote_bulk_order` | Boss, Accounting, Facilities, Customer Service | Checks stock for the exact SKU and size, the shortfall, and the restock cost and lead time. Hands off to Accounting. |
+| Accounting | `stage_payment` (the only agent with it) | Boss, Inventory, Facilities, Customer Service | Checks uncommitted cash, stages invoice and rent payments for human approval, and sets bulk prices above `unit_cost`. Hands off to Customer Service. |
+| Facilities | `check_rent_due` | Boss, Inventory, Accounting, Customer Service | Confirms the lease, rent and due date against the desk date. Hands off to Accounting to stage the rent. |
+| Customer Service | none | Boss, Inventory, Accounting, Facilities | Writes the customer reply for 101 and 103, without promising shipment while stock is 0 or a payment awaits approval. |
+
+Every agent can delegate to every other (20 one-way links) through `delegate_to_<agent>` tools.
+
+## API routes
+
+FastAPI server in `backend/main.py`, started from `backend/` with `uvicorn main:app --reload --port 8000`, with CORS allowed for `http://localhost:5173`. Every route reaches the database through the shared MCP connection, never SQLite.
+
+- `GET /tickets`: returns the shop date (`desk.date_today`) and lists the three tickets with their status, any pending staged payments (also attached to each ticket), and the current agent run's state.
+- `POST /tickets/{ticket_id}/run`: starts the agent team on a ticket in the background and returns `202` right away. It returns `409` if a run is already in progress and `404` for an unknown ticket.
+- `GET /events?ticket_id=&limit=`: recent audit-trail entries (delegations, tool calls and results, final answers), optionally for one ticket.
+- `POST /payments/{payment_id}/approve` (body `{"approved_by": "<name>"}`): a human approves a staged payment through the backend-only `approve_payment` tool. This is the only route that changes cash.
+- `GET /cash`: the checking balance, pending staged payments and available cash, via `check_available_cash`.
+- `POST /reset`: restores `data/campus_customs_new.db` from the original via the backend-only `reset_database` tool. The audit trail is kept. Returns `409` while a run is in progress.
+
+## Dashboard
+
+React + Vite + TypeScript app in `frontend/`. Start it with `npm run dev` on `http://localhost:5173`; it calls the backend at `http://localhost:8000`. Design notes are in `output/design.md`.
+
+- **Ledger strip (top bar):**
+  - the shop date, read from `desk.date_today` through `GET /tickets`;
+  - the checking balance;
+  - uncommitted cash (the balance minus staged payments);
+  - a **Reset DB** button that asks for confirmation before calling `POST /reset`.
+- **Shop rail:** the three tickets as job tags with status stamps (`OPEN`, `AWAITING APPROVAL`, `RESOLVED`), an "On the floor" marker while agents work a ticket, and any staged amount. Click a tag to select that ticket.
+- **Work order:** the selected ticket and a **Start agents** button, which calls `POST /tickets/{id}/run`. While a run is going, a progress panel shows:
+  - elapsed time;
+  - handoff depth out of 3;
+  - requests used out of 35;
+  - the handoff chain, with the agent currently working highlighted.
+
+  Start is disabled while any run is in progress, and for tickets that are resolved or awaiting approval.
+- **Dispatch floor:** a live feed from `GET /events`, polled every second during a run. It shows each handoff, each tool call with its result, and each agent's full final answer. Every row carries that agent's colour and a labelled station badge, so colour is never the only cue.
+- **Payments awaiting approval:** one voucher per staged payment. **Approve** asks for an "Approved by" name (prefilled with Vishal) and calls `POST /payments/{id}/approve`. The ticket and the cash figures update straight after.
+- **What each station did:** one card per agent in the run, with its tools, handoffs and full final answer.
+
+## Safety rules
 
 - **Only a human approves money.** Agents can only stage a payment. `approve_payment` alone fills in `paid_at` and `approved_by`, deducts from `cash_accounts`, marks the invoice `paid` or moves the lease's `next_due` forward a month, and resolves the ticket. `approve_payment` and `reset_database` are backend-only: they're tagged `backend`, filtered out of every agent's toolset, and refused at call time if an agent ever names them.
 - **`stage_payment` guards.** The amount comes from the database (the linked open invoice or the lease rent), never from the agent. The tool refuses:
@@ -83,12 +131,12 @@ Each ticket tool takes only a `ticket_id` and looks up everything else from `tic
 - **One clock: `desk.date_today`.** Every due-date and overdue calculation uses `desk.date_today` (2026-08-31), never the system clock. Approvals record that date as `paid_at`.
 - **No direct database access.** `backend/` and the agents never call `sqlite3` or import from `mcp_server/`. Every shop fact comes through MCP tool calls.
 
-## Token and loop limits
+### Token and loop limits
 
 - **`UsageLimits(request_limit=35)`** covers a whole ticket run. Every delegated agent shares the caller's usage counter, so all agents in one run together get at most 35 model requests.
 - **Delegation depth cap of 3** across the whole handoff chain. Boss → Inventory → Accounting → Customer Service is the longest a chain can get. A fourth handoff is refused with a message telling the agent to finish with the facts it has, so agents can't loop.
 
-## Audit trail
+### Audit trail
 
 Every agent-loop step is appended to `output/audit_trail.json`, a single JSON array that stays valid after every write. Each append atomically replaces the file with the earlier entries plus the new one. Earlier entries are never changed or dropped, and a run never clears the file; `reset_database` doesn't touch it either. Each entry has:
 - `run_id`, `timestamp`, `ticket_id` and `agent`;
@@ -98,13 +146,18 @@ Every agent-loop step is appended to `output/audit_trail.json`, a single JSON ar
 - the delegation `depth`;
 - `requests_used` so far in the run.
 
-## Backend routes
+## Results of the real runs
 
-FastAPI server in `backend/main.py`, started from `backend/` with `uvicorn main:app --reload --port 8000`, with CORS allowed for `http://localhost:5173`. Every route reaches the database through the shared MCP connection, never SQLite.
+Tickets 101, 102 and 103 were run on the dashboard in that order after a reset, with real `gpt-6-luna` agents. Vishal approved both staged payments.
 
-- `GET /tickets`: returns the shop date (`desk.date_today`) and lists the three tickets with their status, any pending staged payments (also attached to each ticket), and the current agent run's state.
-- `POST /tickets/{ticket_id}/run`: starts the agent team on a ticket in the background and returns `202` right away. It returns `409` if a run is already in progress and `404` for an unknown ticket.
-- `GET /events?ticket_id=&limit=`: recent audit-trail entries (delegations, tool calls and results, final answers), optionally for one ticket.
-- `POST /payments/{payment_id}/approve` (body `{"approved_by": "<name>"}`): a human approves a staged payment through the backend-only `approve_payment` tool. This is the only route that changes cash.
-- `GET /cash`: the checking balance, pending staged payments and available cash, via `check_available_cash`.
-- `POST /reset`: restores `data/campus_customs_new.db` from the original via the backend-only `reset_database` tool. The audit trail is kept. Returns `409` while a run is in progress.
+| Ticket | Chain | Requests | Money | Final status |
+|---|---|---|---|---|
+| 101 | Boss → Inventory → Accounting → Customer Service | 13 of 35 | $840.00 Invoice 501 to Bulldog Print Co, staged by Accounting, approved by Vishal | resolved (via approval) |
+| 102 | Boss → Facilities → Accounting | 10 of 35 | $2,400.00 Lease 1 rent to Elm City Properties, staged by Accounting, approved by Vishal | resolved (via approval) |
+| 103 | Boss → Inventory → Accounting → Customer Service | 12 of 35 | nothing spent: the $264.00 restock exceeds the $160.00 available; quoted $49.00 per hoodie | resolved (by Boss) |
+
+Checking went from $3,400.00 to **$160.00**, confirmed against `cash_accounts`. Details:
+- `output/desk_tickets.html`: Expected vs. Actual for each ticket, plus the Cash tab.
+- `output/resolved_tickets.json`: each ticket's outcome, what each agent contributed, and the approvals.
+- `output/resolved_board.html`: the three dashboard screenshots, embedded in the page.
+- `output/audit_trail.json`: every step of every run.

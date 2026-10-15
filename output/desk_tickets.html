@@ -88,6 +88,40 @@
   .stub { text-align: center; padding: 56px 20px; }
   .stub p { color: var(--muted); margin: 6px 0 0; }
 
+  .badges { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .arrow { color: var(--muted); }
+  .run-meta { margin: -4px 0 14px; color: var(--muted); font-size: 13.5px; }
+  .run-meta strong { color: var(--text); }
+  ol.handoffs { margin: 2px 0 0; padding-left: 20px; }
+  ol.handoffs li { margin-bottom: 8px; }
+  .slip { color: var(--muted); font-size: 14px; }
+  .muted { color: var(--muted); }
+  table.tools { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  table.tools th, table.tools td { text-align: left; vertical-align: top; padding: 8px 10px; border-top: 1px solid var(--line); }
+  table.tools th { white-space: nowrap; font-weight: 600; width: 1%; }
+  table.tools td code { display: inline-block; margin: 2px 0; }
+  blockquote { margin: 4px 0 0; padding: 10px 14px; border-left: 3px solid var(--pink); background: var(--panel-2); border-radius: 0 8px 8px 0; color: var(--text); }
+  .cash-figures { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .figure { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+  .figure--key { border-color: var(--pink-line); background: var(--pink-soft); }
+  .figure__label { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--pink); font-weight: 700; }
+  .figure__value { font-family: var(--mono); font-size: 24px; font-weight: 600; }
+  .figure__note { color: var(--muted); font-size: 13px; }
+  .table-wrap { overflow-x: auto; }
+  table.ledger-table { width: 100%; border-collapse: collapse; }
+  table.ledger-table th, table.ledger-table td { text-align: left; vertical-align: top; padding: 10px; border-top: 1px solid var(--line); }
+  table.ledger-table thead th { border-top: 0; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+  table.ledger-table td:nth-child(3), table.ledger-table td:nth-child(4) { font-family: var(--mono); white-space: nowrap; }
+  @media (max-width: 560px) {
+    .cash-figures { grid-template-columns: 1fr; }
+    table.ledger-table thead { display: none; }
+    table.ledger-table tr { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+    table.ledger-table td { border: 0; padding: 2px 0; }
+    table.ledger-table td:nth-child(1), table.ledger-table td:nth-child(2) { grid-column: 1 / -1; }
+    table.ledger-table td:nth-child(1) { font-weight: 700; color: var(--pink); }
+    table.ledger-table td:nth-child(3)::before, table.ledger-table td:nth-child(4)::before { content: attr(data-label); display: block; font-family: inherit; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+  }
+
   @media (max-width: 560px) {
     .wrap { padding-top: 24px; }
     h1 { font-size: 24px; }
@@ -152,8 +186,37 @@
     </section>
 
     <section class="block" aria-labelledby="act-101">
-      <div class="block-head"><h3 id="act-101">Actual</h3></div>
-      <div class="empty">Not run yet. To be filled in after the run.</div>
+      <div class="block-head">
+        <h3 id="act-101">Actual</h3>
+        <span class="badges"><span class="end-state awaiting">run ended: awaiting_approval</span><span class="arrow">→</span><span class="end-state resolved">now: resolved</span></span>
+      </div>
+      <p class="run-meta">Real gpt-6-luna run from the board · 22:24:59–22:25:03 EDT (4s) · 27 audit steps · <strong>13 of 35 requests used</strong> · 3 handoffs · run <code>8e2c6af1</code></p>
+      <dl>
+        <div class="item">
+          <dt>Agents that worked</dt>
+          <dd>Boss, Inventory, Accounting, Customer Service. Facilities was left out.</dd>
+        </div>
+        <div class="item">
+          <dt>Every handoff</dt>
+          <dd><ol class="handoffs"><li><strong>Boss → Inventory</strong> <span class="muted">(handoff 1, at request 2)</span><br><span class="slip">“Handle ticket 101 customer order. Check stock for CC-TEE-WHITE size S quantity 1, determine fulfillment and any needed invoice/payment coordination. Use direct specialist handoffs as appropriate within the 3-handoff cap; report key findings, actions, status/payment details. Invoice 501 is currently open for $840.”</span></li><li><strong>Inventory → Accounting</strong> <span class="muted">(handoff 2, at request 4)</span><br><span class="slip">“Handle Ticket 101&#x27;s unpaid linked invoice before Customer Service replies to Tauhid. Current fulfillment check: CC-TEE-WHITE size S, qty requested 1, qty on hand 0 in Aisle B, cannot fulfill from stock; shortfall 1. Linked Invoice 501 is open for $840 to Bulldog Print Co (apparel reprint), due 2026-08-28 and 3 days overdue as of 2026-08-31; vendor lead time is 5 days. Please assess/coordinate invoice/payment as appropriate and pass the outcome to Customer Service; do not promise shipment while stock is zero or the invoice blocks restock.”</span></li><li><strong>Accounting → Customer Service</strong> <span class="muted">(handoff 3, at request 7)</span><br><span class="slip">“For Ticket 101, tell Tauhid the linked Invoice 501 ($840) was staged for human approval (payment id 1, pending; not paid yet). Cash before staging was $3,400 available; after staging $2,560 remains available. Invoice was due 2026-08-28, 3 days overdue as of 2026-08-31. Inventory reports CC-TEE-WHITE size S qty 1, on hand 0, shortfall 1, vendor lead time 5 days. Do not promise shipment while stock is zero or invoice blocks restock; explain payment requires human approval.”</span></li></ol></dd>
+        </div>
+        <div class="item">
+          <dt>MCP tools each agent called (in order)</dt>
+          <dd><table class="tools"><tbody><tr><th scope="row">Boss</th><td><code>get_ticket(ticket_id=101)</code><br><code>get_ticket(ticket_id=101)</code></td></tr><tr><th scope="row">Inventory</th><td><code>check_order_fulfillment(ticket_id=101)</code></td></tr><tr><th scope="row">Accounting</th><td><code>check_available_cash()</code><br><code>stage_payment(ticket_id=101)</code></td></tr><tr><th scope="row">Customer Service</th><td><code>get_ticket(ticket_id=101)</code><br><code>read_table(table=&quot;inventory&quot;)</code><br><code>read_table(table=&quot;vendors&quot;)</code><br><code>list_payments(status=&quot;pending&quot;)</code><br><code>check_available_cash(account=&quot;checking&quot;)</code></td></tr></tbody></table></dd>
+        </div>
+        <div class="item">
+          <dt>End state</dt>
+          <dd>The run ended at <strong>awaiting_approval</strong>: Accounting's <code>stage_payment</code> staged payment #1, $840.00 for Invoice 501 to Bulldog Print Co, and Boss left the ticket alone. Vishal then approved payment #1 on the board, which paid Invoice 501, took $840.00 out of checking and set the ticket to <strong>resolved</strong> (the database now shows ticket 101 <code>resolved</code> and invoice 501 <code>paid</code>).</dd>
+        </div>
+        <div class="item">
+          <dt>Customer Service&#x27;s reply to Tauhid</dt>
+          <dd><blockquote>Hi Tauhid, the Classic Bulldog Tee (SKU CC-TEE-WHITE), size S, is currently out of stock (0 available), so it isn’t ready to ship. The $840 rush reprint invoice (#501) with Bulldog Print Co is staged for human approval and has not been paid yet. Once it’s approved, fulfillment will take 5 lead days. We’ll share an update when the approval is complete.</blockquote></dd>
+        </div>
+        <div class="item">
+          <dt>Compared with Expected</dt>
+          <dd>Matched: the chain Boss → Inventory → Accounting → Customer Service with the reply returning up to Boss, Facilities left out, <code>check_order_fulfillment</code>, <code>check_available_cash</code> and <code>stage_payment</code> for $840.00, and the awaiting_approval end state. Differences: Accounting didn't call <code>read_table</code> on invoices because Inventory's handoff already carried the invoice details; Customer Service read the ticket, inventory, vendors, payments and cash before replying; Boss called <code>get_ticket</code> a second time to confirm the status before finishing.</dd>
+        </div><div class="item"><dt>Note</dt><dd>The whole run took about 4 seconds, and every step and answer is identical to an earlier test run of ticket 101, so the model responses appear to have been served from the Portkey gateway's cache. The tool calls themselves ran live against the database (they staged the real payment #1).</dd></div>
+      </dl>
     </section>
   </div>
 
@@ -193,8 +256,37 @@
     </section>
 
     <section class="block" aria-labelledby="act-102">
-      <div class="block-head"><h3 id="act-102">Actual</h3></div>
-      <div class="empty">Not run yet. To be filled in after the run.</div>
+      <div class="block-head">
+        <h3 id="act-102">Actual</h3>
+        <span class="badges"><span class="end-state awaiting">run ended: awaiting_approval</span><span class="arrow">→</span><span class="end-state resolved">now: resolved</span></span>
+      </div>
+      <p class="run-meta">Real gpt-6-luna run from the board · 22:26:33–22:27:08 EDT (35s) · 17 audit steps · <strong>10 of 35 requests used</strong> · 2 handoffs · run <code>44f6cc4a</code></p>
+      <dl>
+        <div class="item">
+          <dt>Agents that worked</dt>
+          <dd>Boss, Facilities, Accounting. Inventory and Customer Service were left out.</dd>
+        </div>
+        <div class="item">
+          <dt>Every handoff</dt>
+          <dd><ol class="handoffs"><li><strong>Boss → Facilities</strong> <span class="muted">(handoff 1, at request 2)</span><br><span class="slip">“Handle rent_notice for ticket 102. Check lease notice/due details, determine appropriate rent payment action, and if payment is due and permissible, stage it following policy. Report key numbers, status, payment ID, and any needed next steps. Do not hand off to Inventory or Customer Service.”</span></li><li><strong>Facilities → Accounting</strong> <span class="muted">(handoff 2, at request 4)</span><br><span class="slip">“Ticket 102 rent_notice. Confirmed ticket landlord Elm City Properties matches lease 1 landlord. Chapel Street shop rent is $2,400, next due 2026-09-02, 2 days from desk date 2026-08-31. Please verify available cash and stage the $2,400 rent payment for human approval per policy. Report cash status and staged_payment_id.”</span></li></ol></dd>
+        </div>
+        <div class="item">
+          <dt>MCP tools each agent called (in order)</dt>
+          <dd><table class="tools"><tbody><tr><th scope="row">Boss</th><td><code>get_ticket(ticket_id=102)</code><br><code>get_ticket(ticket_id=102)</code><br><code>list_payments(status=&quot;pending&quot;)</code></td></tr><tr><th scope="row">Facilities</th><td><code>check_rent_due(ticket_id=102)</code></td></tr><tr><th scope="row">Accounting</th><td><code>check_available_cash(account=&quot;checking&quot;)</code><br><code>stage_payment(ticket_id=102, account=&quot;checking&quot;)</code></td></tr></tbody></table></dd>
+        </div>
+        <div class="item">
+          <dt>End state</dt>
+          <dd>The run ended at <strong>awaiting_approval</strong>: Accounting staged payment #2, $2,400.00 rent for Lease 1 to Elm City Properties, leaving $160.00 uncommitted. Boss checked the pending payment and left the ticket for a human. Vishal then approved payment #2, which took $2,400.00 out of checking, moved Lease 1's next due date to 2026-10-02 and set the ticket to <strong>resolved</strong>.</dd>
+        </div>
+        <div class="item">
+          <dt>Accounting&#x27;s report</dt>
+          <dd><blockquote>Available checking cash was $2,560 before staging. Staged the $2,400 rent payment for Lease 1 for human approval (payment ID 2); it remains pending, and available cash is now $160.</blockquote></dd>
+        </div>
+        <div class="item">
+          <dt>Compared with Expected</dt>
+          <dd>Matched: the chain Boss → Facilities → Accounting with Accounting's result returning up to Boss, Inventory and Customer Service left out, <code>check_rent_due</code>, <code>check_available_cash</code> and <code>stage_payment</code> for $2,400.00, and uncommitted cash going from $2,560.00 to $160.00. Differences: by the time 102 ran, the $840.00 had already been approved, so Accounting saw a $2,560.00 balance with nothing pending (same $2,560.00 available as planned); Boss also called <code>get_ticket</code> and <code>list_payments</code> at the end to confirm the payment was pending.</dd>
+        </div>
+      </dl>
     </section>
   </div>
 
@@ -234,16 +326,71 @@
     </section>
 
     <section class="block" aria-labelledby="act-103">
-      <div class="block-head"><h3 id="act-103">Actual</h3></div>
-      <div class="empty">Not run yet. To be filled in after the run.</div>
+      <div class="block-head">
+        <h3 id="act-103">Actual</h3>
+        <span class="badges"><span class="end-state resolved">resolved</span></span>
+      </div>
+      <p class="run-meta">Real gpt-6-luna run from the board · 22:27:41–22:28:29 EDT (48s) · 27 audit steps · <strong>12 of 35 requests used</strong> · 3 handoffs · run <code>3e2be993</code></p>
+      <dl>
+        <div class="item">
+          <dt>Agents that worked</dt>
+          <dd>Boss, Inventory, Accounting, Customer Service. Facilities was left out.</dd>
+        </div>
+        <div class="item">
+          <dt>Every handoff</dt>
+          <dd><ol class="handoffs"><li><strong>Boss → Inventory</strong> <span class="muted">(handoff 1, at request 2)</span><br><span class="slip">“Handle price_override for ticket 103. Check stock position for SKU CC-HOOD-NAVY size M, quantity 20, then determine appropriate bulk discount/quote using your process and any needed handoffs. Report key numbers, actions, status/payment details, and agents involved.”</span></li><li><strong>Inventory → Accounting</strong> <span class="muted">(handoff 2, at request 4)</span><br><span class="slip">“Ticket 103 price_override: Please decide/handle the money and pricing side and pass on to Customer Service as appropriate. Stock facts from quote_bulk_order: CC-HOOD-NAVY size M requested 20; on hand 8 in Aisle A; shortfall 12. Unit cost $22, restock cost for shortfall $264. Apparel vendor is Bulldog Print Co (apparel reprint), lead time 5 days; restock-ready by 2026-09-05. List price $58/unit; list total $1,160. No linked invoice on ticket (invoice_id null). Report discount/quote decision, any payment status/actions, and agents involved.”</span></li><li><strong>Accounting → Customer Service</strong> <span class="muted">(handoff 3, at request 6)</span><br><span class="slip">“Ticket 103 money/pricing settled: no linked invoice, so no payment staged. Restock cost is $264 for shortfall 12 versus available checking cash $160 (balance $160, pending $0), so shop cannot fund restock now. Bulk quote decision: CC-HOOD-NAVY at $49/unit for requested 20 = $980 total; verified unit cost $22 and list $58, giving $27 margin/unit. Inventory facts: 8 on hand, shortfall 12; Bulldog Print Co lead time 5 days, restock-ready 2026-09-05. Please reply to customer as appropriate and communicate stock/lead-time and quote.”</span></li></ol></dd>
+        </div>
+        <div class="item">
+          <dt>MCP tools each agent called (in order)</dt>
+          <dd><table class="tools"><tbody><tr><th scope="row">Boss</th><td><code>get_ticket(ticket_id=103)</code><br><code>update_ticket(ticket_id=103, status=&quot;resolved&quot;, note=&quot;Inventory confirmed 8 of 20 hoodies on hand; quoted bulk price $49/unit ($980 total). Customer Service offered pay-up-front or split-shipment options. Remaining 12 require an unfunded $264 reprint; no payment staged.&quot;)</code></td></tr><tr><th scope="row">Inventory</th><td><code>quote_bulk_order(ticket_id=103)</code></td></tr><tr><th scope="row">Accounting</th><td><code>check_available_cash(account=&quot;checking&quot;)</code><br><code>read_table(table=&quot;pricing&quot;, limit=200)</code></td></tr><tr><th scope="row">Customer Service</th><td><code>get_ticket(ticket_id=103)</code><br><code>read_table(table=&quot;inventory&quot;, limit=200)</code><br><code>read_table(table=&quot;vendors&quot;, limit=200)</code><br><code>list_payments()</code><br><code>check_available_cash(account=&quot;checking&quot;)</code></td></tr></tbody></table></dd>
+        </div>
+        <div class="item">
+          <dt>End state</dt>
+          <dd><strong>resolved</strong> directly by Boss with <code>update_ticket</code> at the end of the run, with a note recording the quote. No payment was staged and no cash moved.</dd>
+        </div>
+        <div class="item">
+          <dt>Customer Service&#x27;s reply to Yale AI Club</dt>
+          <dd><blockquote>Hello Yale AI Club,<br><br>We can offer the Basic Hoodie Big Yale (CC-HOOD-NAVY), size M, at our bulk price of $49 per hoodie for 20, for a total of $980. We have 8 ready now in Aisle A. The remaining 12 require a reprint from Bulldog Print Co, which takes 5 days once approved. The reprint is not yet ordered: the shop has $160 in available checking cash, while the restock costs $264. We have no payment staged. We can proceed if the club pays up front, or we can split the shipment so the 8 available hoodies are handled separately while the remaining 12 await reprint funding and approval.</blockquote></dd>
+        </div>
+        <div class="item">
+          <dt>Compared with Expected</dt>
+          <dd>Matched: the chain Boss → Inventory → Accounting → Customer Service with the reply returning up to Boss, Facilities left out, <code>quote_bulk_order</code> (8 on hand, $22.00 cost, $58.00 list, 5 lead days), <code>check_available_cash</code> ($160.00), <code>read_table</code> on pricing, no <code>stage_payment</code>, and Boss resolving with <code>update_ticket</code>. Accounting set the bulk price at <strong>$49.00 per hoodie</strong> ($980.00 for 20; $27.00 margin per unit, 15.52% below list) and said the $264.00 restock is $104.00 more than the shop can fund. Differences: Customer Service read the ticket, inventory, vendors, payments and cash before replying, and offered either payment up front or a split shipment.</dd>
+        </div>
+      </dl>
     </section>
   </div>
 
   <!-- Cash -->
   <div role="tabpanel" id="panel-cash" aria-labelledby="tab-cash" tabindex="0" hidden>
-    <section class="block stub">
-      <h2>Cash</h2>
-      <p>Coming later.</p>
+    <div class="ticket-head"><h2>Cash</h2><span class="tag">checking</span></div>
+    <p class="ticket-meta">How the checking account moved across the three real runs, in the order they ran (101 → 102 → 103), on shop date 2026-08-31.</p>
+
+    <div class="cash-figures">
+      <div class="figure"><span class="figure__label">Starting balance</span><span class="figure__value">$3,400.00</span><span class="figure__note">after reset, as Accounting saw it on ticket 101 (nothing pending)</span></div>
+      <div class="figure"><span class="figure__label">Paid out (human-approved)</span><span class="figure__value">−$3,240.00</span><span class="figure__note">2 payments, both approved by Vishal</span></div>
+      <div class="figure figure--key"><span class="figure__label">Ending balance</span><span class="figure__value">$160.00</span><span class="figure__note">matches <code>cash_accounts</code> in the database</span></div>
+    </div>
+
+    <section class="block" aria-labelledby="cash-steps">
+      <div class="block-head"><h3 id="cash-steps">Step by step</h3></div>
+      <div class="table-wrap">
+      <table class="ledger-table">
+        <thead><tr><th scope="col">Ticket</th><th scope="col">What happened</th><th scope="col">Checking</th><th scope="col">Uncommitted</th></tr></thead>
+        <tbody>
+          <tr><td data-label="Ticket">Start</td><td data-label="What happened">Database reset to the original.</td><td data-label="Checking">$3,400.00</td><td data-label="Uncommitted">$3,400.00</td></tr>
+          <tr><td data-label="Ticket">101</td><td data-label="What happened">Accounting staged payment #1: <strong>$840.00</strong> for Invoice 501 (“Rush reprint CC-TEE-WHITE S”), payee <strong>Bulldog Print Co</strong>. Staging moves no money.</td><td data-label="Checking">$3,400.00</td><td data-label="Uncommitted">$2,560.00</td></tr>
+          <tr><td data-label="Ticket">101</td><td data-label="What happened"><strong>Vishal approved payment #1</strong> on the board (paid_at 2026-08-31). Invoice 501 is now <code>paid</code>; ticket 101 resolved.</td><td data-label="Checking">$2,560.00</td><td data-label="Uncommitted">$2,560.00</td></tr>
+          <tr><td data-label="Ticket">102</td><td data-label="What happened">Accounting staged payment #2: <strong>$2,400.00</strong> rent for Lease 1 (Chapel Street shop), payee <strong>Elm City Properties</strong>.</td><td data-label="Checking">$2,560.00</td><td data-label="Uncommitted">$160.00</td></tr>
+          <tr><td data-label="Ticket">102</td><td data-label="What happened"><strong>Vishal approved payment #2</strong> (paid_at 2026-08-31). Lease 1's next due date moved to 2026-10-02; ticket 102 resolved.</td><td data-label="Checking">$160.00</td><td data-label="Uncommitted">$160.00</td></tr>
+          <tr><td data-label="Ticket">103</td><td data-label="What happened"><strong>Nothing spent.</strong> A price override has no invoice or lease to pay, so there was nothing to stage. Restocking the 12 missing hoodies would cost 12 × $22.00 = $264.00, which is $104.00 more than the $160.00 available, so Accounting did not commit shop cash. It quoted $49.00 × 20 = $980.00 to Yale AI Club instead, with pay-up-front or split-shipment options; that money has not come in yet.</td><td data-label="Checking">$160.00</td><td data-label="Uncommitted">$160.00</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </section>
+
+    <section class="block" aria-labelledby="cash-check">
+      <div class="block-head"><h3 id="cash-check">Ending balance, confirmed</h3><span class="end-state resolved">matches</span></div>
+      <p>$3,400.00 − $840.00 − $2,400.00 = <strong>$160.00</strong>. Read through MCP (<code>read_table</code> on <code>cash_accounts</code>): <code>checking</code>, balance <strong>$160.00</strong>, dated 2026-08-31. <code>check_available_cash</code> shows $0.00 pending, so uncommitted cash is also $160.00. Both payments in <code>payments</code> are completed, with <code>approved_by</code> = Vishal.</p>
     </section>
   </div>
 

@@ -185,6 +185,16 @@ Test it with the scripted model only, no real run, and make sure `npm run build`
 
 ## Problem 9
 
+I reset the database and ran tickets 101, 102 and 103 on the board, in that order, approving the $840 and $2,400 payments myself. The screenshots are in `output/` as `ticket_101.png`, `ticket_102.png` and `ticket_103.png`. Don’t rerun any agents. Using the real runs in `output/audit_trail.json` and the database (read through MCP):
+
+1. Fill the Actual section on each ticket tab in `output/desk_tickets.html`: which agents worked, every handoff, which tools each called, the end state, and requests used. Keep my Expected sections unchanged.
+2. Fill the Cash tab: the starting balance ($3,400 after reset); for each ticket, how cash changed and why (which payment, payee, amount, who approved it; for 103, why nothing was spent); and the ending balance, confirmed against `cash_accounts` in the database.
+3. Create `output/resolved_tickets.json`: for each ticket, its id, final status, short outcome, what each agent contributed, and any human approvals.
+4. Create `output/resolved_board.html`, a page I can double-click, showing my three screenshots with the images embedded so it works anywhere.
+5. Finish `output/harness.md` so it covers tables, MCP tools, the five agents, API routes, the dashboard and safety rules.
+
+Log this under Problem 9 in `AI_prompts.md` and commit as “P9”.
+
 ## Problem 10
 
 ## Problem 11
