@@ -18,7 +18,7 @@ Source: `data/campus_customs.db` (copied to `data/campus_customs_new.db`). 9 tab
 
 ## Agents
 
-Five PydanticAI agents in `backend/agents.py`, all on `gpt-6-luna` through the Portkey gateway, with prompts in `backend/prompts/`. They share one MCP connection to `mcp_server/server.py`: a single `MCPToolset` over stdio. PydanticAI 2.56 replaced `MCPServerStdio` with `MCPToolset`. Each agent sees a filtered view of that connection with only its role's tools.
+Five PydanticAI agents in `backend/agents.py`, all on `gpt-6-luna` through the Portkey gateway's Responses API (`/v1/responses`, reasoning on; chat completions rejects tools with reasoning), with prompts in `backend/prompts/`. They share one MCP connection to `mcp_server/server.py`: a single `MCPToolset` over stdio. PydanticAI 2.56 replaced `MCPServerStdio` with `MCPToolset`. Each agent sees a filtered view of that connection with only its role's tools.
 
 Every agent has the 6 shared read tools: `get_ticket`, `list_tickets`, `list_tables`, `read_table`, `check_available_cash`, `list_payments`.
 

@@ -1,11 +1,15 @@
-"""The shared gpt-6-luna model, reached through the Portkey gateway."""
+"""The shared gpt-6-luna model, reached through the Portkey gateway's Responses API.
+
+gpt-6-luna rejects function tools on /v1/chat/completions while reasoning is
+on, so the agents use /v1/responses, which supports tools with reasoning.
+"""
 
 import os
 from pathlib import Path
 
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
-from pydantic_ai.models.openai import OpenAIChatModel
+from pydantic_ai.models.openai import OpenAIResponsesModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -22,8 +26,8 @@ def portkey_api_key() -> str:
     raise RuntimeError("PORTKEY_API_KEY is not set in .env (project root or parent directory).")
 
 
-def build_model() -> OpenAIChatModel:
-    """gpt-6-luna via Portkey. Don't set max_tokens: the model rejects it (it wants max_completion_tokens)."""
+def build_model() -> OpenAIResponsesModel:
+    """gpt-6-luna via Portkey's Responses API, with the model's default reasoning left on."""
     key = portkey_api_key()
     client = AsyncOpenAI(base_url=PORTKEY_BASE_URL, api_key=key, default_headers={"x-portkey-api-key": key})
-    return OpenAIChatModel(MODEL_NAME, provider=OpenAIProvider(openai_client=client))
+    return OpenAIResponsesModel(MODEL_NAME, provider=OpenAIProvider(openai_client=client))

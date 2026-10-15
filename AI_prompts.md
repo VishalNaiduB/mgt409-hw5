@@ -118,6 +118,12 @@ Then update `output/harness.md` with:
 
 Test the audit trail with the scripted test model only, without a real ticket run. Confirm the file appends across two test runs, then clear the test entries so it starts empty. Confirm the database is unchanged. Log this under Problem 5 in `AI_prompts.md` and commit as “P5c”.
 
+### Problem 5 follow-up: model fix
+
+Switch backend/llm.py to the Responses API through Portkey, keeping gpt-6-luna and reasoning on. Then redo the real run of ticket 101 the same way as before: scratch audit file, no approvals, then reset and confirm the real audit trail is still []. Show me the chain, tools, requests used, final status and any staged payment. Log this under Problem 5 in AI_prompts.md as a follow-up, with one sentence noting the first setup used chat completions, which gpt-6-luna rejects once agents have tools. Commit as “P5 model fix”.
+
+Note: The first setup used chat completions (`/v1/chat/completions`), which gpt-6-luna rejects once agents have tools while reasoning is on, so the first real run failed on its first request.
+
 ## Problem 6
 
 Build `output/desk_tickets.html`, a page I can double-click, with tabs for Ticket 101, Ticket 102, Ticket 103, Cash, and Reflection. Leave Cash and Reflection as “coming later” stubs. On each ticket tab, add an Expected section with my plan below, and an empty Actual section to fill in later. Keep my wording and make sure any MCP tool names in my notes match the exact tool names defined in our server/harness; you can format it cleanly. Log this under Problem 6 in `AI_prompts.md` and commit as “P6”.
