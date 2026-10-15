@@ -12,11 +12,15 @@ Only tools the server tags "agent" can pass the filter, so the backend-only
 tools (approve_payment, reset_database) never reach any agent. Every agent can
 delegate to each of the other four, with a depth cap of 3 across the whole
 handoff chain and UsageLimits(request_limit=35) shared by every agent in a run.
+
+Every agent-loop step (delegation, MCP tool call, tool result, final answer) is
+appended to output/audit_trail.json, tagged with the run id.
 """
 
 import asyncio
 from dataclasses import dataclass, field
 from typing import Any, get_args
+from uuid import uuid4
 
 from fastmcp import Client
 from fastmcp.client.transports import StdioTransport
@@ -25,8 +29,9 @@ from pydantic_ai.mcp import CallToolFunc, MCPToolset
 from pydantic_ai.tools import ToolDefinition
 from pydantic_ai.usage import RunUsage, UsageLimits
 
+from backend.audit import append_audit, short
 from backend.llm import PROJECT_ROOT, build_model
-from backend.models import MAX_DELEGATION_DEPTH, AgentHandoff, AgentName, AgentResponse, AuditEntry
+from backend.models import MAX_DELEGATION_DEPTH, AgentHandoff, AgentName, AgentResponse, AuditEntry, AuditStep
 
 PROMPTS_DIR = PROJECT_ROOT / "backend" / "prompts"
 USAGE_LIMITS = UsageLimits(request_limit=35)
@@ -58,40 +63,62 @@ PROMPT_FILES: dict[AgentName, str] = {
 
 @dataclass
 class ShopDeps:
-    """Per-agent run state. `audit` is shared by every agent in one ticket run."""
+    """Per-agent run state. `run_id` and `audit` are shared by every agent in one ticket run."""
 
     ticket_id: int
     agent: AgentName
     depth: int = 0
+    run_id: str = field(default_factory=lambda: uuid4().hex)
     chain: list[AgentName] = field(default_factory=list)
     handoffs: list[AgentHandoff] = field(default_factory=list)
     audit: list[AuditEntry] = field(default_factory=list)
 
 
+def _record(
+    deps: ShopDeps,
+    step_type: AuditStep,
+    requests_used: int,
+    *,
+    tool: str | None = None,
+    arguments: dict[str, Any] | None = None,
+    result: object = "",
+    depth: int | None = None,
+) -> None:
+    """Append one agent-loop step to the run's audit list and to output/audit_trail.json."""
+    entry = AuditEntry(
+        run_id=deps.run_id,
+        ticket_id=deps.ticket_id,
+        agent=deps.agent,
+        step_type=step_type,
+        tool=tool,
+        arguments=arguments or {},
+        result=short(result),
+        depth=deps.depth if depth is None else depth,
+        requests_used=requests_used,
+    )
+    deps.audit.append(entry)
+    append_audit(entry)
+
+
 async def _audit_tool_call(
     ctx: RunContext[Any], call_tool: CallToolFunc, name: str, tool_args: dict[str, Any]
 ) -> Any:
-    """Record each agent MCP tool call, and refuse any tool outside the calling agent's role.
+    """Audit each agent MCP tool call and its result, refusing any tool outside the agent's role.
 
     The per-agent filters already hide those tools; this is a second check at call time.
     """
     deps = ctx.deps
-    if isinstance(deps, ShopDeps):
-        if name in BACKEND_ONLY_TOOLS:
-            return {"error": f"'{name}' is a backend-only tool; agents can't call it."}
-        if name not in ALLOWED_MCP_TOOLS[deps.agent]:
-            return {"error": f"'{name}' is not one of the {deps.agent} agent's tools."}
-        deps.audit.append(
-            AuditEntry(
-                actor=deps.agent,
-                action="stage_payment" if name == "stage_payment" else "tool_call",
-                ticket_id=deps.ticket_id,
-                tool=name,
-                depth=deps.depth,
-                detail={"args": tool_args},
-            )
-        )
-    return await call_tool(name, tool_args)
+    if not isinstance(deps, ShopDeps):
+        return await call_tool(name, tool_args)
+    _record(deps, "tool_call", ctx.usage.requests, tool=name, arguments=tool_args)
+    if name in BACKEND_ONLY_TOOLS:
+        result: Any = {"error": f"'{name}' is a backend-only tool; agents can't call it."}
+    elif name not in ALLOWED_MCP_TOOLS[deps.agent]:
+        result = {"error": f"'{name}' is not one of the {deps.agent} agent's tools."}
+    else:
+        result = await call_tool(name, tool_args)
+    _record(deps, "tool_result", ctx.usage.requests, tool=name, arguments=tool_args, result=result)
+    return result
 
 
 # The one MCP connection every agent (and later the backend) shares.
@@ -130,30 +157,36 @@ def _finalize(output: AgentResponse, deps: ShopDeps) -> AgentResponse:
 
 
 def _delegate_tool(target: AgentName) -> Tool[ShopDeps]:
+    tool_name = f"delegate_to_{_slug(target)}"
+
     async def delegate(ctx: RunContext[ShopDeps], task: str) -> str:
         deps = ctx.deps
+        arguments = {"to_agent": target, "task": task}
         if deps.depth >= MAX_DELEGATION_DEPTH:
-            return (
+            refusal = (
                 f"Handoff refused: the chain {' -> '.join(deps.chain)} already has {MAX_DELEGATION_DEPTH} "
                 "handoffs, the cap. Finish with the facts you have."
             )
+            _record(deps, "delegation", ctx.usage.requests, tool=tool_name, arguments=arguments, result=refusal)
+            return refusal
         handoff = AgentHandoff(
             from_agent=deps.agent, to_agent=target, ticket_id=deps.ticket_id, task=task, depth=deps.depth + 1
         )
         deps.handoffs.append(handoff)
-        deps.audit.append(
-            AuditEntry(
-                actor=deps.agent,
-                action="handoff",
-                ticket_id=deps.ticket_id,
-                depth=handoff.depth,
-                detail=handoff.model_dump(),
-            )
+        _record(
+            deps,
+            "delegation",
+            ctx.usage.requests,
+            tool=tool_name,
+            arguments=arguments,
+            result=f"Handed off to {target} at depth {handoff.depth}.",
+            depth=handoff.depth,
         )
         child = ShopDeps(
             ticket_id=deps.ticket_id,
             agent=target,
             depth=handoff.depth,
+            run_id=deps.run_id,
             chain=[*deps.chain, target],
             audit=deps.audit,
         )
@@ -165,20 +198,12 @@ def _delegate_tool(target: AgentName) -> Tool[ShopDeps]:
             usage_limits=USAGE_LIMITS,
         )
         response = _finalize(result.output, child)
-        deps.audit.append(
-            AuditEntry(
-                actor=target,
-                action="response",
-                ticket_id=deps.ticket_id,
-                depth=child.depth,
-                detail=response.model_dump(),
-            )
-        )
+        _record(child, "final_answer", ctx.usage.requests, result=response.summary)
         return response.model_dump_json()
 
     return Tool(
         delegate,
-        name=f"delegate_to_{_slug(target)}",
+        name=tool_name,
         description=(
             f"Hand this ticket to the {target} agent with a specific task, and get its report back. "
             f"The whole handoff chain is capped at {MAX_DELEGATION_DEPTH}."
@@ -203,11 +228,16 @@ AGENTS: dict[AgentName, Agent[ShopDeps, AgentResponse]] = {name: _build_agent(na
 
 
 async def run_ticket(ticket_id: int) -> tuple[AgentResponse, list[AuditEntry]]:
-    """Run one ticket through Boss, who routes it to the specialists."""
+    """Run one ticket through Boss, who routes it to the specialists.
+
+    Every step of the run is appended to output/audit_trail.json under one run id.
+    """
     deps = ShopDeps(ticket_id=ticket_id, agent="Boss", chain=["Boss"])
     async with MCP_SERVER:
         result = await AGENTS["Boss"].run(f"Handle ticket {ticket_id}.", deps=deps, usage_limits=USAGE_LIMITS)
-    return _finalize(result.output, deps), deps.audit
+    response = _finalize(result.output, deps)
+    _record(deps, "final_answer", result.usage.requests, result=response.summary)
+    return response, deps.audit
 
 
 async def agent_tool_names() -> dict[AgentName, list[str]]:

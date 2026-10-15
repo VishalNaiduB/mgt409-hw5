@@ -106,6 +106,18 @@ Yes, enforce roles in code, not just prompts. Give stage_payment to Accounting o
 
 Note: The first pass enforced role limits only in the prompts, so every agent's toolset still included `stage_payment` and `update_ticket`.
 
+### Pass 5c
+
+Pass 5c: wire the agents so every agent-loop step appends to `output/audit_trail.json`. Never wipe or overwrite it between runs, and keep the file valid JSON. Each entry should have a run id, timestamp, ticket id, agent, step type (delegation, tool call, tool result, final answer), tool name and arguments, a short result, delegation depth, and requests used so far.
+Then update `output/harness.md` with:
+
+* all 5 agents, with their role tools and who they can delegate to;
+* every MCP tool, the table it uses, and whether it’s an agent tool or backend-only;
+* a safety section: approval only by a human, guards on `update_ticket` and `stage_payment`, the `read_table` whitelist, role-limited toolsets, pending payments stored with empty strings because those columns are NOT NULL, and using `desk.date_today`;
+* token and loop limits: `UsageLimits(request_limit=35)` and the delegation depth cap of 3.
+
+Test the audit trail with the scripted test model only, without a real ticket run. Confirm the file appends across two test runs, then clear the test entries so it starts empty. Confirm the database is unchanged. Log this under Problem 5 in `AI_prompts.md` and commit as “P5c”.
+
 ## Problem 6
 
 ## Problem 7

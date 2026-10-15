@@ -79,13 +79,19 @@ class StagedPayment(BaseModel):
         return "pending" if self.paid_at == "" else "completed"
 
 
-class AuditEntry(BaseModel):
-    """One step in a ticket's audit trail: a tool call, handoff, staging, approval or reset."""
+AuditStep = Literal["delegation", "tool_call", "tool_result", "final_answer"]
 
+
+class AuditEntry(BaseModel):
+    """One agent-loop step, as appended to output/audit_trail.json."""
+
+    run_id: str
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    actor: str = Field(description="An AgentName, 'backend', or 'human:<name>' for an approval.")
-    action: Literal["tool_call", "handoff", "response", "stage_payment", "approve_payment", "reset"]
-    ticket_id: int | None = None
+    ticket_id: int
+    agent: AgentName
+    step_type: AuditStep
     tool: str | None = None
-    depth: int = Field(default=0, ge=0, le=MAX_DELEGATION_DEPTH)
-    detail: dict[str, Any] = Field(default_factory=dict)
+    arguments: dict[str, Any] = Field(default_factory=dict)
+    result: str = Field(default="", description="A short summary, truncated.")
+    depth: int = Field(ge=0, le=MAX_DELEGATION_DEPTH)
+    requests_used: int = Field(ge=0, description="Model requests used so far in this run, across all agents.")
