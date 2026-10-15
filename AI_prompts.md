@@ -50,6 +50,14 @@ Log this prompt under Problem 5 in `AI_prompts.md`.
 
 Note: The `payments` table declares `paid_at` and `approved_by` as NOT NULL, so `NULL` was rejected by the schema; I chose to store staged payments with empty strings (`''`) in both columns instead of changing the schema.
 
+### Pass 5a follow-ups
+
+Also tighten update_ticket: it must refuse to set a ticket to resolved if that ticket has a pending staged payment (empty paid_at); only approve_payment can resolve those. And make sure read_table only accepts names from the real table list, so it can’t run arbitrary SQL.
+
+Yes, close that gap too: update_ticket should refuse resolved while a ticket’s linked invoice is still open or its lease rent for the current due date hasn’t been approved and paid. Then log this and my previous prompt under Problem 5 in AI_prompts.md as Pass 5a follow-ups, with one sentence noting that the first pass let agents resolve tickets around the approval gate and read_table needed injection hardening. Re-run your tests, confirm data/campus_customs_new.db is still identical to the original, and commit as “P5a follow-up”.
+
+Note: The first pass did not tie resolving a ticket to the approval gate, so once agents were allowed to resolve tickets they could get around it, and read_table needed injection hardening.
+
 ## Problem 6
 
 ## Problem 7

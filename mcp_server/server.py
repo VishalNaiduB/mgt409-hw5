@@ -22,8 +22,9 @@ DB_PATH = DATA_DIR / "campus_customs_new.db"
 SOURCE_DB_PATH = DATA_DIR / "campus_customs.db"
 
 # Statuses an agent may set directly. "awaiting_approval" is set only by
-# stage_payment and "resolved" only by approve_payment.
-AGENT_STATUSES = {"open", "in_progress", "escalated"}
+# stage_payment, and "resolved" only once nothing is left for a human to
+# approve (see _resolve_blocker).
+AGENT_STATUSES = {"open", "in_progress", "escalated", "resolved"}
 
 # The payments table declares paid_at and approved_by NOT NULL, so a staged
 # (pending) payment stores an empty string in both until a human approves it.
@@ -86,7 +87,29 @@ def _ticket(ticket_id: int, expected_type: str) -> dict:
 
 
 def _table_names(conn: sqlite3.Connection) -> list[str]:
-    return [r["name"] for r in _rows(conn, "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")]
+    """The shop's real table names, excluding SQLite's internal sqlite_* tables."""
+    return [
+        r["name"]
+        for r in _rows(
+            conn,
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite\\_%' ESCAPE '\\' ORDER BY name",
+        )
+    ]
+
+
+def _pending_for_ticket(conn: sqlite3.Connection, ticket: dict) -> list[dict]:
+    """Pending staged payments (empty paid_at) for a ticket's linked invoice or lease."""
+    links = [("invoice", ticket["invoice_id"]), ("rent", ticket["lease_id"])]
+    return [
+        payment
+        for kind, ref_id in links
+        if ref_id is not None
+        for payment in _rows(
+            conn,
+            "SELECT * FROM payments WHERE kind = ? AND ref_id = ? AND paid_at = ?",
+            (kind, ref_id, PENDING),
+        )
+    ]
 
 
 def _pending_total(conn: sqlite3.Connection, account: str) -> float:
@@ -96,6 +119,45 @@ def _pending_total(conn: sqlite3.Connection, account: str) -> float:
         (account, PENDING),
     )
     return round(row["total"], 2)
+
+
+def _resolve_blocker(conn: sqlite3.Connection, ticket: dict) -> str | None:
+    """Why an agent may not resolve this ticket yet, or None if it may.
+
+    A ticket can't be resolved around the approval gate: not while a staged
+    payment is pending, not while its linked invoice is still open, and not
+    while its lease rent hasn't been approved and paid since the notice came in.
+    approve_payment advances the lease's next_due, so a completed rent payment
+    dated on or after the ticket's created_at is the payment for the due date
+    the notice was about.
+    """
+    tid = ticket["id"]
+    pending = _pending_for_ticket(conn, ticket)
+    if pending:
+        ids = ", ".join(str(p["id"]) for p in pending)
+        return f"Ticket {tid} has pending staged payment {ids}; only a human approval can resolve it."
+    if ticket["invoice_id"] is not None:
+        invoice = _row(conn, "SELECT id, status FROM invoices WHERE id = ?", (ticket["invoice_id"],))
+        if invoice is None:
+            return f"Ticket {tid}'s linked invoice {ticket['invoice_id']} was not found."
+        if invoice["status"] == "open":
+            return f"Ticket {tid}'s invoice {invoice['id']} is still open; it must be staged and approved by a human first."
+    if ticket["lease_id"] is not None:
+        lease = _row(conn, "SELECT id, next_due FROM leases WHERE id = ?", (ticket["lease_id"],))
+        if lease is None:
+            return f"Ticket {tid}'s linked lease {ticket['lease_id']} was not found."
+        noticed = ticket["created_at"][:10]
+        paid = _row(
+            conn,
+            "SELECT id FROM payments WHERE kind = 'rent' AND ref_id = ? AND paid_at != ? AND paid_at >= ?",
+            (lease["id"], PENDING, noticed),
+        )
+        if paid is None:
+            return (
+                f"Ticket {tid}'s rent for lease {lease['id']} has not been approved and paid since the notice "
+                f"on {noticed}; it must be staged and approved by a human first."
+            )
+    return None
 
 
 def _cash(conn: sqlite3.Connection, account: str) -> dict:
@@ -286,9 +348,11 @@ def get_ticket(ticket_id: int) -> dict:
 def update_ticket(ticket_id: int, status: str | None = None, note: str | None = None) -> dict:
     """Set a ticket's status and/or append a note to it.
 
-    Agents may set status to "open", "in_progress" or "escalated" only:
-    "awaiting_approval" comes from stage_payment and "resolved" from a human
-    approval. A note is appended to the ticket's notes with the desk date.
+    Agents may set status to "open", "in_progress", "escalated" or "resolved".
+    "awaiting_approval" comes only from stage_payment. "resolved" is refused
+    while the ticket has a pending staged payment, while its linked invoice is
+    still open, or while its lease rent hasn't been approved and paid since the
+    notice. A note is appended to the ticket's notes with the desk date.
     """
     _log("update_ticket", ticket_id=ticket_id, status=status, note=note)
     try:
@@ -300,6 +364,10 @@ def update_ticket(ticket_id: int, status: str | None = None, note: str | None = 
             ticket = _row(conn, "SELECT * FROM tickets WHERE id = ?", (ticket_id,))
             if ticket is None:
                 return {"error": f"Ticket {ticket_id} not found."}
+            if status == "resolved":
+                blocker = _resolve_blocker(conn, ticket)
+                if blocker:
+                    return {"error": blocker}
             if ticket["status"] in ("awaiting_approval", "resolved") and status is not None:
                 return {"error": f"Ticket {ticket_id} is '{ticket['status']}'; its status can only change through a human approval."}
             if status is not None:
@@ -336,14 +404,21 @@ def list_tables() -> dict:
 
 @mcp.tool(tags=AGENT)
 def read_table(table: str, limit: int = 50) -> dict:
-    """Read up to `limit` rows (max 200) from one table, read-only."""
+    """Read up to `limit` rows (max 200) from one table, read-only.
+
+    `table` must exactly match a name from list_tables; anything else is refused,
+    so no caller-supplied SQL ever reaches the database.
+    """
     _log("read_table", table=table, limit=limit)
     try:
         with _connect() as conn:
-            if table not in _table_names(conn):
-                return {"error": f"Unknown table '{table}'. Use list_tables to see the tables."}
-            rows = _rows(conn, f'SELECT * FROM "{table}" LIMIT ?', (max(1, min(limit, 200)),))
-            return {"table": table, "rows": rows}
+            names = _table_names(conn)
+            if table not in names:
+                return {"error": f"Unknown table '{table}'. Choose one of: {', '.join(names)}."}
+            # Interpolate the name from the database's own list, never the caller's string.
+            name = names[names.index(table)]
+            rows = _rows(conn, f'SELECT * FROM "{name}" LIMIT ?', (max(1, min(int(limit), 200)),))
+            return {"table": name, "rows": rows}
     except Exception as exc:
         return {"error": str(exc)}
 

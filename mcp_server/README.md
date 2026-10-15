@@ -21,9 +21,9 @@ Each ticket tool takes a `ticket_id` and looks up everything else (SKU, size, qu
 | `quote_bulk_order` | reads `tickets`, `inventory`, `pricing`, `vendors` | For a `price_override` ticket (103): stock versus quantity requested, unit cost (the price floor) and list price, order totals, and each vendor's lead time and restock-ready date. |
 | `list_tickets` | reads `tickets`, `desk` | All tickets, or only those with a given status. |
 | `get_ticket` | reads `tickets`, `invoices`, `leases`, `desk` | One ticket with its linked invoice and lease rows. |
-| `update_ticket` | writes `tickets` | Sets a ticket's status to `open`, `in_progress` or `escalated` and/or appends a dated note. It refuses `awaiting_approval` and `resolved`, and won't change the status of a ticket that is already awaiting approval or resolved. |
-| `list_tables` | reads every table | Each table's columns and row count. |
-| `read_table` | reads one table | Up to 200 rows of a named table (only real table names are accepted). |
+| `update_ticket` | reads `payments`; writes `tickets` | Sets a ticket's status to `open`, `in_progress`, `escalated` or `resolved` and/or appends a dated note. It refuses `awaiting_approval` (only staging sets it) and won't change the status of a ticket that is already awaiting approval or resolved. It refuses `resolved` while the ticket has a pending staged payment, while its linked invoice is still `open`, or while its lease rent hasn't been approved and paid since the notice came in (a completed rent payment dated on or after the ticket's `created_at`, since approval moves `next_due` forward). So a ticket with a bill behind it can't be resolved around the approval gate. |
+| `list_tables` | reads every table | Each shop table's columns and row count (SQLite's internal `sqlite_*` tables are left out). |
+| `read_table` | reads one table | Up to 200 rows of one table. The name must exactly match a table from `list_tables`; anything else (SQL fragments, `sqlite_master`, different case) is refused, so no caller-supplied SQL reaches the database. |
 | `check_available_cash` | reads `cash_accounts`, `payments` | An account's balance, total of pending staged payments, and available cash. |
 | `list_payments` | reads `payments` | All payments, or only `pending` (staged) or `completed` (approved) ones. |
 | `stage_payment` | reads `tickets`, `invoices`, `leases`, `cash_accounts`; writes `payments`, `tickets` | Stages the payment a ticket needs for human approval. It moves no money (see below). |
@@ -44,7 +44,7 @@ Staging refuses:
 - a duplicate: an invoice or lease rent that already has a pending staged payment, or a ticket that is already `awaiting_approval` or `resolved`;
 - a ticket with no linked invoice or lease, or an invoice that is not `open`.
 
-Only `approve_payment` fills in `paid_at` and `approved_by`, changes `cash_accounts`, marks invoices paid, advances leases and sets tickets to `resolved`.
+Only `approve_payment` fills in `paid_at` and `approved_by`, changes `cash_accounts`, marks invoices paid, advances leases, and resolves a ticket that has a pending staged payment. An agent can resolve a ticket only when nothing is left for a human to approve.
 
 A tool returns `{"error": "..."}` instead of raising, for example when the ticket does not exist or is the wrong type for that tool. Tool calls are logged to stderr, since stdout carries the MCP stdio protocol.
 
