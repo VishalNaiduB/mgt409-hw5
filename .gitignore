@@ -1,0 +1,7 @@
+.venv/
+.env
+.DS_Store
+__pycache__/
+node_modules/
+CLAUDE.md
+hw5.zip
