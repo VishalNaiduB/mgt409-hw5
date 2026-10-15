@@ -39,6 +39,17 @@ Save those three MCP tool calls in output/mcp_smoke.json: for each, the exact pr
 
 ## Problem 5
 
+Let’s start Problem 5 in three passes. For Pass 5a:
+
+1. Load `PORTKEY_API_KEY` from `.env` in the project root and run a quick test call to check if `gpt-6-luna` responds before we wire the agents. If it fails, stop and tell me; don’t switch to another model.
+2. Expand `mcp_server/server.py` with the additional MCP tools our 5 agents (Boss, Inventory, Accounting, Facilities, Customer Service) and the backend routes will need to read/update tickets, inspect tables, stage payments, and execute human approvals or DB resets. For staging payments, do NOT create any new database tables. Insert a row into the existing `payments` table with `paid_at` and `approved_by` left empty (`NULL`), and set the ticket to `awaiting_approval`. Staging should refuse an amount above available cash and refuse a duplicate for something already staged. Available cash = `cash_accounts` balance minus pending staged payments only (completed payments are already deducted from the balance). Only the human approval tool should fill in `paid_at` and `approved_by`, deduct from `cash_accounts`, mark the invoice paid or advance the lease’s next due date, and set the ticket to `resolved`. The approval and reset tools are backend-only: agents must never be given them.
+3. Update `mcp_server/README.md` so the tool list matches all tools now in the server, and mark which tools are agent tools vs backend-only.
+4. Create `backend/models.py` with the Pydantic models for tickets, agent handoffs/responses, staged payments, and audit trail entries.
+
+Log this prompt under Problem 5 in `AI_prompts.md`.
+
+Note: The `payments` table declares `paid_at` and `approved_by` as NOT NULL, so `NULL` was rejected by the schema; I chose to store staged payments with empty strings (`''`) in both columns instead of changing the schema.
+
 ## Problem 6
 
 ## Problem 7
