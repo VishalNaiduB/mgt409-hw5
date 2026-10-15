@@ -237,3 +237,16 @@ My reflection notes:
 Fix all 4 with minimal wording changes. Also apply the two smaller points: in 102, say Boss handed off only to Facilities, which brought in Accounting; and in Section 4, add one sentence noting these assume a ticket row exists (there’s no tool to create tickets) and that the multi-size bundle would use read_table on inventory, since quote_bulk_order covers one SKU and size per ticket. Keep everything else as I wrote it, then commit as “P10”.
 
 ## Problem 11
+
+Problem 11, final submission. First check whether the GitHub CLI is installed and signed in (`gh auth status`). If it isn’t, stop and tell me what to run. If it is, create a public repo named `mgt409-hw5` under my account, without pushing yet.
+
+1. Write the root `README.md` explaining: copying `data/campus_customs.db` to `data/campus_customs_new.db` for a clean run; that the MCP server starts automatically over stdio when the backend starts (plus how to run it standalone); starting the FastAPI backend from `backend/`; starting the React board from `frontend/`; resetting the DB before a full three-ticket run. Also note that the committed working DB holds the post-run state ($160, all tickets resolved) that matches the output files, so Reset only if you want a fresh run.
+2. Create `requirements.txt` with the Python packages the project actually uses.
+3. Check the file layout against the assignment’s expected tree and tell me about anything missing or extra.
+4. Check for secrets: search every tracked file and the full git history for the real Portkey key and confirm `.env` was never committed. Also search for [the two marker words] and confirm neither appears. If any of these checks fail, stop and tell me before pushing anything.
+5. Write the new repo’s URL into `output/github_url.txt`, log this prompt under Problem 11 in `AI_prompts.md`, commit as “P11”, and push to the repo.
+6. Create `hw5.zip` of the tracked files (no `node_modules`, `.venv`, `.env` or `CLAUDE.md`) in the parent `Projects` folder, outside the repo.
+
+Then show me `git status`, the pushed commit list, and the zip’s contents.
+
+Note: The two marker words in item 4 are redacted in this log so the repository contains neither of them; the rest of the prompt is word for word.
