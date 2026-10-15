@@ -145,6 +145,17 @@ Ticket 103 (Yale AI Club: 20x CC-HOOD-NAVY size M bulk discount, price_override)
 
 ## Problem 7
 
+Build the FastAPI server in `backend/main.py` so it starts from the `backend/` folder with `uvicorn main:app --reload --port 8000`, and allow CORS from `http://localhost:5173`. Routes:
+
+1. List the three tickets with their status, plus any pending staged payments.
+2. Run the agent team on a ticket id in the background and return right away, so the board can poll while it runs. Refuse a second run while one is already in progress.
+3. Return recent agent events from the audit trail (what each agent said and which tools it used), filterable by ticket.
+4. Approve a staged payment when a human clicks approve, by calling the backend-only `approve_payment` MCP tool. This is the only route that changes cash.
+5. Return the current checking balance and available cash.
+6. Reset `data/campus_customs_new.db` to the original by calling the `reset_database` MCP tool, without touching the audit trail.
+
+Every route goes through MCP, never sqlite directly. Test every route except the real agent run (use the scripted test model for that), confirm the database is back to the original afterwards and the audit trail is still `[]`, then add the routes to `output/harness.md` (one line each: method, path, what it does). Log this under Problem 7 in `AI_prompts.md` and commit as “P7”.
+
 ## Problem 8
 
 ## Problem 9

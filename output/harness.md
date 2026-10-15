@@ -97,3 +97,14 @@ Every agent-loop step is appended to `output/audit_trail.json`, a single JSON ar
 - a short `result`;
 - the delegation `depth`;
 - `requests_used` so far in the run.
+
+## Backend routes
+
+FastAPI server in `backend/main.py`, started from `backend/` with `uvicorn main:app --reload --port 8000`, with CORS allowed for `http://localhost:5173`. Every route reaches the database through the shared MCP connection, never SQLite.
+
+- `GET /tickets`: lists the three tickets with their status, any pending staged payments (also attached to each ticket), and the current agent run's state.
+- `POST /tickets/{ticket_id}/run`: starts the agent team on a ticket in the background and returns `202` right away. It returns `409` if a run is already in progress and `404` for an unknown ticket.
+- `GET /events?ticket_id=&limit=`: recent audit-trail entries (delegations, tool calls and results, final answers), optionally for one ticket.
+- `POST /payments/{payment_id}/approve` (body `{"approved_by": "<name>"}`): a human approves a staged payment through the backend-only `approve_payment` tool. This is the only route that changes cash.
+- `GET /cash`: the checking balance, pending staged payments and available cash, via `check_available_cash`.
+- `POST /reset`: restores `data/campus_customs_new.db` from the original via the backend-only `reset_database` tool. The audit trail is kept. Returns `409` while a run is in progress.
