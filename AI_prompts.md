@@ -58,6 +58,54 @@ Yes, close that gap too: update_ticket should refuse resolved while a ticket’s
 
 Note: The first pass did not tie resolving a ticket to the approval gate, so once agents were allowed to resolve tickets they could get around it, and read_table needed injection hardening.
 
+### Pass 5b
+
+Now for Pass 5b, create the 5 prompt files in `backend/prompts/` (`boss.md`, `inventory.md`, `accounting.md`, `facilities.md`, `customer_service.md`) expanding on my shop rules below while keeping my wording and specific rules intact. In every prompt file, add this line: “The figures above are examples from today’s data; always get current numbers from the MCP tools before deciding.”
+Then build the 5 PydanticAI agents in `backend/` using `gpt-6-luna` and `PORTKEY_API_KEY` loaded from the `.env` in the project root. Make sure all 5 agents share a single `MCPServerStdio` connection to `mcp_server/server.py` (do not import functions from `mcp_server` or call sqlite3 directly). Give every agent a delegate tool for each of the other four agents, so any agent can hand off to any other (full connectivity), with a delegation depth cap of 3 enforced across the whole chain, and set `UsageLimits(request_limit=35)`. The backend-only MCP tools `approve_payment` and `reset_database` must not be given to any agent; filter them out of the agents’ toolset.
+When done, don’t run a real ticket yet. Instead list each agent’s tools, show that `approve_payment` and `reset_database` aren’t among them, and confirm the delegate tools connect all five agents. Log this prompt under Problem 5 in `AI_prompts.md`.
+Shop rules for each agent:
+Boss:
+
+* Route tickets based on what they actually need instead of calling every agent on the floor: send customer_order (101) to Inventory first, rent_notice (102) to Facilities first, and price_override (103) to Inventory first so we know our stock position before quoting a discount.
+* Keep uninvolved specialists out of the loop: Facilities has nothing to do with apparel orders (101, 103), and Inventory/Customer Service don’t need to be called on shop rent (102).
+* Let specialists hand off directly to each other (like Inventory → Accounting → Customer Service) rather than bouncing back to Boss after every single step, and cap handoffs at 3 so agents don’t loop forever.
+* When a run finishes, only mark the ticket resolved if no money is moving; if Accounting staged a payment, leave the ticket in awaiting_approval until a human clicks approve.
+
+Inventory:
+
+* Always check current stock in the inventory table for the exact SKU and size on the ticket, plus vendor lead days if we are short.
+* Never promise an item can ship if qty is 0 or if there is an unpaid vendor invoice blocking the restock.
+* On Ticket 101, CC-TEE-WHITE size S is at 0 stock and linked to Invoice 501 ($840 to Bulldog Print Co, 5 lead days), so hand off directly to Accounting to handle the unpaid invoice before Customer Service replies to Tauhid.
+* On Ticket 103, Yale AI Club wants 20 CC-HOOD-NAVY size M hoodies but we only have 8 in Aisle A (short by 12, which costs $22/unit = $264 from Bulldog Print Co with a 5-day lead time), so pass those stock and restock numbers directly to Accounting.
+
+Accounting:
+
+* Always compare due dates against desk.date_today (2026-08-31), never the system clock, so Invoice 501 (due 2026-08-28) is already 3 days overdue, and Lease 1 (due 2026-09-02) is due in 2 days.
+* Never deduct money from cash_accounts or mark a payment as paid yourself; only stage payments by inserting a row in payments with paid_at and approved_by left empty (empty, not yet filled) for human approval.
+* Before staging any payment or approving a restock spend, check uncommitted cash: start with cash_accounts.balance ($3,400) and subtract only pending staged payments (completed payments are already deducted from the balance).
+* Once $840 (Invoice 501) and $2,400 (Lease 1 rent) are accounted for, only $160 in uncommitted cash remains, which is not enough to cover the $264 cost to restock 12 hoodies on Ticket 103 right now.
+* For price overrides (Ticket 103), never quote below unit_cost ($22 for CC-HOOD-NAVY vs $58 list price); set a sensible bulk price above $22 that preserves margin and hand off to Customer Service.
+
+Facilities:
+
+* Handle only shop lease and property matters (Lease 1 for the Chapel Street shop with Elm City Properties).
+* Check leases.next_due (2026-09-02) against desk.date_today (2026-08-31) to confirm the $2,400 monthly rent is coming due in 2 days.
+* Facilities cannot touch cash_accounts or stage payments directly; hand off to Accounting to verify cash and stage the $2,400 rent payment for human approval.
+
+Customer Service:
+
+* Write the final customer-facing response on customer orders and quote requests, and never claim an order has shipped when stock is 0 or a vendor invoice is still awaiting human approval.
+* For Ticket 101 (Tauhid Zaman), clearly explain that CC-TEE-WHITE size S is out of stock, the $840 rush reprint invoice (#501) with Bulldog Print Co is staged for human approval, and fulfillment will take 5 lead days once approved.
+* For Ticket 103 (Yale AI Club), share the bulk price Accounting set per hoodie, confirm that 8 size M hoodies are ready in Aisle A right now, and explain that the remaining 12 need a 5-day reprint from Bulldog Print Co (which can’t be ordered from shop cash yet since uncommitted cash is down to $160 vs the $264 restock cost, unless the club pays up front or splits the shipment).
+
+Note: PydanticAI 2.56 (the installed version) no longer has `MCPServerStdio`; its replacement is `MCPToolset`, so the 5 agents share a single `MCPToolset` over a FastMCP stdio transport to `mcp_server/server.py`.
+
+### Pass 5b follow-up
+
+Yes, enforce roles in code, not just prompts. Give stage_payment to Accounting only, and update_ticket to Boss only. Keep the read tools (get_ticket, list_tickets, list_tables, read_table, check_available_cash, list_payments) available to everyone, and the ticket-check tools to the roles that need them: check_order_fulfillment and quote_bulk_order for Inventory, check_rent_due for Facilities. Show me each agent’s final tool list. Also update the MCPServerStdio line in CLAUDE.md to say MCPToolset, so the rules match the code. Log this as a Pass 5b follow-up in AI_prompts.md, with one sentence noting that the first pass enforced role limits only in prompts. Confirm the database is unchanged, then commit as “P5b”.
+
+Note: The first pass enforced role limits only in the prompts, so every agent's toolset still included `stage_payment` and `update_ticket`.
+
 ## Problem 6
 
 ## Problem 7
