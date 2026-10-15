@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campus Customs Desk</title>
+<style>
+  :root {
+    --bg: #0b0b0d;
+    --panel: #151518;
+    --panel-2: #1c1c21;
+    --line: #2a2a31;
+    --text: #f2f2f4;
+    --muted: #a3a3ad;
+    --pink: #ff4f9a;
+    --pink-soft: rgba(255, 79, 154, 0.12);
+    --pink-line: rgba(255, 79, 154, 0.35);
+    --amber: #ffc46b;
+    --amber-soft: rgba(255, 196, 107, 0.12);
+    --green: #6be3a4;
+    --green-soft: rgba(107, 227, 164, 0.12);
+    --radius: 12px;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 32px 16px 64px; }
+
+  header { margin-bottom: 20px; }
+  .eyebrow { color: var(--pink); font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+  h1 { margin: 4px 0 6px; font-size: 28px; line-height: 1.2; letter-spacing: -.01em; }
+  .sub { color: var(--muted); margin: 0; }
+
+  .assumption {
+    margin: 20px 0 24px;
+    padding: 14px 16px;
+    border: 1px solid var(--pink-line);
+    background: var(--pink-soft);
+    border-radius: var(--radius);
+  }
+  .assumption strong { color: var(--pink); }
+
+  [role="tablist"] {
+    display: flex; gap: 4px; overflow-x: auto;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 24px; scrollbar-width: none;
+  }
+  [role="tablist"]::-webkit-scrollbar { display: none; }
+  [role="tab"] {
+    appearance: none; background: none; border: 0; cursor: pointer;
+    color: var(--muted); font: inherit; font-weight: 600; white-space: nowrap;
+    padding: 10px 14px; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  [role="tab"]:hover { color: var(--text); }
+  [role="tab"][aria-selected="true"] { color: var(--text); border-bottom-color: var(--pink); }
+  [role="tab"]:focus-visible { outline: 2px solid var(--pink); outline-offset: -2px; border-radius: 6px; }
+
+  [role="tabpanel"][hidden] { display: none; }
+  .ticket-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 14px; margin-bottom: 4px; }
+  h2 { margin: 0; font-size: 22px; line-height: 1.3; }
+  .ticket-meta { color: var(--muted); margin: 0 0 20px; }
+  .tag { font-family: var(--mono); font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
+
+  section.block { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .block-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  h3 { margin: 0; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--pink); }
+  .end-state { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+  .end-state.awaiting { color: var(--amber); background: var(--amber-soft); }
+  .end-state.resolved { color: var(--green); background: var(--green-soft); }
+
+  dl { margin: 0; }
+  .item { padding: 14px 0; border-top: 1px solid var(--line); }
+  .item:first-child { border-top: 0; padding-top: 0; }
+  dt { font-weight: 700; margin-bottom: 4px; }
+  dd { margin: 0; color: #dcdce2; }
+  code { font-family: var(--mono); font-size: .9em; color: var(--pink); background: var(--pink-soft); padding: 1px 6px; border-radius: 5px; overflow-wrap: anywhere; }
+
+  .empty {
+    border: 1px dashed var(--line); border-radius: 10px; padding: 22px 16px;
+    color: var(--muted); text-align: center; font-size: 14px;
+  }
+  .stub { text-align: center; padding: 56px 20px; }
+  .stub p { color: var(--muted); margin: 6px 0 0; }
+
+  @media (max-width: 560px) {
+    .wrap { padding-top: 24px; }
+    h1 { font-size: 24px; }
+    section.block { padding: 16px; }
+    .block-head { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Campus Customs · Problem 6</div>
+    <h1>Desk tickets: expected vs. actual</h1>
+    <p class="sub">What we expect each agent run to do, and (later) what it actually did.</p>
+  </header>
+
+  <div class="assumption">
+    <strong>Run order assumption:</strong> We run tickets in sequential order (101 → 102 → 103) starting from the $3,400.00 checking balance on shop date 2026-08-31.
+  </div>
+
+  <div role="tablist" aria-label="Desk sections">
+    <button role="tab" id="tab-101" aria-controls="panel-101" aria-selected="true">Ticket 101</button>
+    <button role="tab" id="tab-102" aria-controls="panel-102" aria-selected="false" tabindex="-1">Ticket 102</button>
+    <button role="tab" id="tab-103" aria-controls="panel-103" aria-selected="false" tabindex="-1">Ticket 103</button>
+    <button role="tab" id="tab-cash" aria-controls="panel-cash" aria-selected="false" tabindex="-1">Cash</button>
+    <button role="tab" id="tab-reflection" aria-controls="panel-reflection" aria-selected="false" tabindex="-1">Reflection</button>
+  </div>
+
+  <!-- Ticket 101 -->
+  <div role="tabpanel" id="panel-101" aria-labelledby="tab-101" tabindex="0">
+    <div class="ticket-head">
+      <h2>Ticket 101</h2>
+      <span class="tag">customer_order</span>
+    </div>
+    <p class="ticket-meta">Tauhid Zaman: 1x CC-TEE-WHITE size S, customer_order</p>
+
+    <section class="block" aria-labelledby="exp-101">
+      <div class="block-head">
+        <h3 id="exp-101">Expected</h3>
+        <span class="end-state awaiting">awaiting_approval</span>
+      </div>
+      <dl>
+        <div class="item">
+          <dt>Who Boss calls first &amp; why</dt>
+          <dd>Boss reads the ticket with <code>get_ticket</code> and calls Inventory first because it is a customer order for physical merch (CC-TEE-WHITE size S) and we need to verify if we have stock on the shelf before doing anything else.</dd>
+        </div>
+        <div class="item">
+          <dt>Handoff chain &amp; who is left out</dt>
+          <dd>
+            Boss → Inventory → Accounting → Customer Service, and Customer Service’s reply returns up the chain to Boss (not a new handoff, since 3 handoffs is our depth cap). Inventory sees 0 units of size S in Aisle B and sees linked Invoice 501 ($840.00 to Bulldog Print Co for a rush reprint), so Inventory hands off directly to Accounting (specialist-to-specialist) to handle the bill. Accounting verifies Invoice 501 was due 2026-08-28 (3 days overdue against desk.date_today 2026-08-31), checks cash ($3,400.00 available), stages the $840.00 payment, and hands off directly to Customer Service to draft the update for Tauhid: size S is out of stock, the reprint is waiting on payment approval, and the tee should be ready about 5 days after approval. Facilities is deliberately left out because this ticket has nothing to do with the shop lease.
+          </dd>
+        </div>
+        <div class="item">
+          <dt>Expected MCP tools</dt>
+          <dd>Boss uses <code>get_ticket</code>; Inventory uses <code>check_order_fulfillment</code> (plus <code>read_table</code> on inventory/vendors if needed); Accounting uses <code>check_available_cash</code> and <code>read_table</code> on invoices, then calls <code>stage_payment</code> for Invoice 501 ($840.00), which automatically moves the ticket to awaiting_approval; Customer Service only reads to confirm facts before drafting the reply.</dd>
+        </div>
+        <div class="item">
+          <dt>Expected end state</dt>
+          <dd>awaiting_approval (since $840.00 is staged for Invoice 501 and a human has to click approve before cash moves and the ticket resolves).</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="block" aria-labelledby="act-101">
+      <div class="block-head"><h3 id="act-101">Actual</h3></div>
+      <div class="empty">Not run yet. To be filled in after the run.</div>
+    </section>
+  </div>
+
+  <!-- Ticket 102 -->
+  <div role="tabpanel" id="panel-102" aria-labelledby="tab-102" tabindex="0" hidden>
+    <div class="ticket-head">
+      <h2>Ticket 102</h2>
+      <span class="tag">rent_notice</span>
+    </div>
+    <p class="ticket-meta">Elm City Properties: $2,400 Chapel Street shop rent, rent_notice</p>
+
+    <section class="block" aria-labelledby="exp-102">
+      <div class="block-head">
+        <h3 id="exp-102">Expected</h3>
+        <span class="end-state awaiting">awaiting_approval</span>
+      </div>
+      <dl>
+        <div class="item">
+          <dt>Who Boss calls first &amp; why</dt>
+          <dd>Boss reads the ticket with <code>get_ticket</code> and calls Facilities first because this is a property/lease rent notice for the Chapel Street shop (Lease 1), which falls strictly under Facilities’ scope.</dd>
+        </div>
+        <div class="item">
+          <dt>Handoff chain &amp; who is left out</dt>
+          <dd>
+            Boss → Facilities → Accounting, and Accounting’s result returns up the chain to Boss. Facilities checks Lease 1 and confirms the $2,400.00 monthly rent to Elm City Properties is due 2026-09-02 (2 days away from desk.date_today 2026-08-31). Since Facilities cannot touch cash or stage payments, Facilities hands off directly to Accounting (specialist-to-specialist). Accounting checks uncommitted cash ($3,400.00 minus the $840.00 staged for Ticket 101 leaves $2,560.00), confirms we can cover the $2,400.00 rent, and stages the $2,400.00 lease payment. Inventory and Customer Service are both deliberately left out because there is no merchandise or external customer order involved.
+          </dd>
+        </div>
+        <div class="item">
+          <dt>Expected MCP tools</dt>
+          <dd>Boss uses <code>get_ticket</code>; Facilities calls <code>check_rent_due</code> to verify lease terms and due date; Accounting uses <code>check_available_cash</code> and calls <code>stage_payment</code> for Lease 1 ($2,400.00), which automatically moves the ticket to awaiting_approval.</dd>
+        </div>
+        <div class="item">
+          <dt>Expected end state</dt>
+          <dd>awaiting_approval (waiting for a human to approve the $2,400.00 rent payment, which will take uncommitted checking down from $2,560.00 to $160.00).</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="block" aria-labelledby="act-102">
+      <div class="block-head"><h3 id="act-102">Actual</h3></div>
+      <div class="empty">Not run yet. To be filled in after the run.</div>
+    </section>
+  </div>
+
+  <!-- Ticket 103 -->
+  <div role="tabpanel" id="panel-103" aria-labelledby="tab-103" tabindex="0" hidden>
+    <div class="ticket-head">
+      <h2>Ticket 103</h2>
+      <span class="tag">price_override</span>
+    </div>
+    <p class="ticket-meta">Yale AI Club: 20x CC-HOOD-NAVY size M bulk discount, price_override</p>
+
+    <section class="block" aria-labelledby="exp-103">
+      <div class="block-head">
+        <h3 id="exp-103">Expected</h3>
+        <span class="end-state resolved">resolved</span>
+      </div>
+      <dl>
+        <div class="item">
+          <dt>Who Boss calls first &amp; why</dt>
+          <dd>Boss reads the ticket with <code>get_ticket</code> and calls Inventory first because before we can quote a bulk discount on 20 navy hoodies, we have to check how many size M hoodies are actually sitting in Aisle A and what the restock math looks like.</dd>
+        </div>
+        <div class="item">
+          <dt>Handoff chain &amp; who is left out</dt>
+          <dd>
+            Boss → Inventory → Accounting → Customer Service, and Customer Service’s reply returns up the chain to Boss (not a new handoff, since 3 handoffs is our depth cap). Inventory checks stock and finds only 8 size M hoodies in Aisle A (short by 12 units; restocking 12 from Bulldog Print Co takes 5 lead days and costs 12 × $22.00 = $264.00). Inventory hands off directly to Accounting (specialist-to-specialist) to check our cash position and set the bulk override price. Accounting sees that after Ticket 101 ($840.00) and Ticket 102 ($2,400.00), uncommitted cash is down to $160.00, meaning we cannot stage the $264.00 vendor restock right now without going negative (and if we had run 103 before 102, spending $264.00 would have left $2,296.00 and caused us to miss the $2,400.00 rent!). Accounting sets a profitable bulk discount price per hoodie well above the $22.00 unit cost (down from the $58.00 list price), refuses to stage the $264.00 restock out of shop cash, and hands off directly to Customer Service to pitch the quote to Yale AI Club (deliver the 8 in-stock hoodies now at the discounted rate, and order the remaining 12 with a 5-day lead time once customer payment/deposit clears). Facilities is deliberately left out.
+          </dd>
+        </div>
+        <div class="item">
+          <dt>Expected MCP tools</dt>
+          <dd>Boss uses <code>get_ticket</code>; Inventory calls <code>quote_bulk_order</code> to get stock (8 on hand), unit cost ($22.00), list price ($58.00), and vendor lead days (5 days); Accounting uses <code>check_available_cash</code> ($160.00 remaining) and <code>read_table</code> on pricing, and calculates the discount without calling <code>stage_payment</code>; Boss records the quote and marks the ticket resolved with <code>update_ticket</code> (only Boss has it).</dd>
+        </div>
+        <div class="item">
+          <dt>Expected end state</dt>
+          <dd>resolved directly (because no shop cash is staged or spent on this run).</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="block" aria-labelledby="act-103">
+      <div class="block-head"><h3 id="act-103">Actual</h3></div>
+      <div class="empty">Not run yet. To be filled in after the run.</div>
+    </section>
+  </div>
+
+  <!-- Cash -->
+  <div role="tabpanel" id="panel-cash" aria-labelledby="tab-cash" tabindex="0" hidden>
+    <section class="block stub">
+      <h2>Cash</h2>
+      <p>Coming later.</p>
+    </section>
+  </div>
+
+  <!-- Reflection -->
+  <div role="tabpanel" id="panel-reflection" aria-labelledby="tab-reflection" tabindex="0" hidden>
+    <section class="block stub">
+      <h2>Reflection</h2>
+      <p>Coming later.</p>
+    </section>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+
+    function select(tab, focus) {
+      tabs.forEach(function (t) {
+        var on = t === tab;
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+        t.tabIndex = on ? 0 : -1;
+        document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+      });
+      if (focus) tab.focus();
+      if (tab.scrollIntoView) tab.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      try { history.replaceState(null, '', '#' + tab.id.replace('tab-', '')); } catch (e) {}
+    }
+
+    tabs.forEach(function (tab, i) {
+      tab.addEventListener('click', function () { select(tab, false); });
+      tab.addEventListener('keydown', function (e) {
+        var next = null;
+        if (e.key === 'ArrowRight') next = tabs[(i + 1) % tabs.length];
+        else if (e.key === 'ArrowLeft') next = tabs[(i - 1 + tabs.length) % tabs.length];
+        else if (e.key === 'Home') next = tabs[0];
+        else if (e.key === 'End') next = tabs[tabs.length - 1];
+        if (next) { e.preventDefault(); select(next, true); }
+      });
+    });
+
+    var fromHash = document.getElementById('tab-' + location.hash.slice(1));
+    if (fromHash) select(fromHash, false);
+  })();
+</script>
+</body>
+</html>
