@@ -146,7 +146,7 @@ Every agent-loop step is appended to `output/audit_trail.json`, a single JSON ar
 - the delegation `depth`;
 - `requests_used` so far in the run.
 
-Scripted test entries were deliberately kept out of `audit_trail.json`: every scripted-model test wrote to a scratch file instead, so the trail holds only the real P9 runs of tickets 101, 102 and 103.
+P5c’s append test entries were cleared before the trail was first committed; later scripted tests used a scratch file, so the committed trail holds only the real P9 runs.
 
 ## Results of the real runs
 
