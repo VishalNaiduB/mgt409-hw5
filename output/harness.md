@@ -94,7 +94,7 @@ Every agent-loop step is appended to `output/audit_trail.json`, a single JSON ar
 - `run_id`, `timestamp`, `ticket_id` and `agent`;
 - `step_type` (`delegation`, `tool_call`, `tool_result` or `final_answer`);
 - `tool` and `arguments`;
-- a short `result`;
+- a `result`: the full text for a `final_answer` (so Customer Service replies and agent summaries are never cut off), and a short summary of at most 200 characters for tool results;
 - the delegation `depth`;
 - `requests_used` so far in the run.
 
@@ -102,7 +102,7 @@ Every agent-loop step is appended to `output/audit_trail.json`, a single JSON ar
 
 FastAPI server in `backend/main.py`, started from `backend/` with `uvicorn main:app --reload --port 8000`, with CORS allowed for `http://localhost:5173`. Every route reaches the database through the shared MCP connection, never SQLite.
 
-- `GET /tickets`: lists the three tickets with their status, any pending staged payments (also attached to each ticket), and the current agent run's state.
+- `GET /tickets`: returns the shop date (`desk.date_today`) and lists the three tickets with their status, any pending staged payments (also attached to each ticket), and the current agent run's state.
 - `POST /tickets/{ticket_id}/run`: starts the agent team on a ticket in the background and returns `202` right away. It returns `409` if a run is already in progress and `404` for an unknown ticket.
 - `GET /events?ticket_id=&limit=`: recent audit-trail entries (delegations, tool calls and results, final answers), optionally for one ticket.
 - `POST /payments/{payment_id}/approve` (body `{"approved_by": "<name>"}`): a human approves a staged payment through the backend-only `approve_payment` tool. This is the only route that changes cash.

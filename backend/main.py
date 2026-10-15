@@ -96,8 +96,9 @@ async def _run_in_background(ticket_id: int) -> None:
 # 1. Tickets and pending payments
 @app.get("/tickets")
 async def list_tickets() -> dict:
-    """The tickets with their status, any pending staged payments, and the current run."""
-    tickets = (await mcp("list_tickets"))["tickets"]
+    """The tickets with their status, any pending staged payments, the shop date and the current run."""
+    listing = await mcp("list_tickets")
+    tickets = listing["tickets"]
     pending = (await mcp("list_payments", status="pending"))["payments"]
     for ticket in tickets:
         ticket["pending_payments"] = [
@@ -106,7 +107,7 @@ async def list_tickets() -> dict:
             if (p["kind"] == "invoice" and p["ref_id"] == ticket["invoice_id"])
             or (p["kind"] == "rent" and p["ref_id"] == ticket["lease_id"])
         ]
-    return {"tickets": tickets, "pending_payments": pending, "run": run_state}
+    return {"date_today": listing["date_today"], "tickets": tickets, "pending_payments": pending, "run": run_state}
 
 
 # 2. Run the agent team in the background

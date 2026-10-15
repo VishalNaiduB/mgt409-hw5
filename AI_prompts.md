@@ -164,6 +164,25 @@ Every route goes through MCP, never sqlite directly. Test every route except the
 
 ## Problem 8
 
+Build the dashboard in `frontend/` with React + Vite + TypeScript, calling the backend at `http://localhost:8000`. Design concept: style it like a vintage-meets-modern “Chapel Street Print Shop & Dispatch Desk”: warm off-white/kraft paper surfaces, crisp dark ink typography, monospace ledger numbers, and tactile work-order ticket cards that look like physical screen-printing job tags clipped to a shop rail. Give the top bar a brass-and-slate ledger strip showing the shop date, live Checking Balance, uncommitted cash (after staged payments), and a Reset DB button. Give each of the 5 agents their own distinct shop-station badge and accent color (e.g., Navy for Boss, Amber/Kraft for Inventory, Emerald Ledger Green for Accounting, Rust/Brick for Facilities, and Royal Blue for Customer Service) so you can immediately tell who is talking and handing off on the floor.
+It must:
+
+* list all three tickets with status;
+* let me pick one and start the agents;
+* show each agent’s messages and tool calls live while it runs (a run takes about a minute, so the progress must be visible), with each agent visually distinct;
+* mark the ticket resolved when it finishes (or awaiting_approval until I click Approve when a payment is staged);
+* show a short summary of what each agent did;
+* show a clear Approve button for any staged payment;
+* show the checking balance and available cash, updating after approval;
+* include a Reset button;
+* read the shop date from `desk.date_today` through the backend (add it to a route if needed), never hard-coded;
+* make Approve ask for an “approved by” name, prefilled with Vishal, and send it to the approve route;
+* make Reset a button with a confirmation step, not a switch;
+* don’t rely on color alone: label each agent badge with its name too.
+
+Make it look designed, not like a stock template. Also update the audit trail so agents’ final answers are stored in full (tool results can stay short) so Customer Service replies and agent summaries never get cut off at 200 characters. Write `output/design.md` explaining the layout, how agents read differently, how resolved tickets and cash show up, and the creative choices behind it.
+Test it with the scripted model only, no real run, and make sure `npm run build` passes with no TypeScript errors. Then confirm the database matches the original and the audit trail is `[]`. Log this under Problem 8 in `AI_prompts.md` and commit as “P8”.
+
 ## Problem 9
 
 ## Problem 10

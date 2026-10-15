@@ -92,6 +92,6 @@ class AuditEntry(BaseModel):
     step_type: AuditStep
     tool: str | None = None
     arguments: dict[str, Any] = Field(default_factory=dict)
-    result: str = Field(default="", description="A short summary, truncated.")
+    result: str = Field(default="", description="The full text for a final answer; a short, truncated summary otherwise.")
     depth: int = Field(ge=0, le=MAX_DELEGATION_DEPTH)
     requests_used: int = Field(ge=0, description="Model requests used so far in this run, across all agents.")

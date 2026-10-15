@@ -84,7 +84,12 @@ def _record(
     result: object = "",
     depth: int | None = None,
 ) -> None:
-    """Append one agent-loop step to the run's audit list and to output/audit_trail.json."""
+    """Append one agent-loop step to the run's audit list and to output/audit_trail.json.
+
+    Final answers are stored in full, so a Customer Service reply or an agent's
+    summary is never cut off; tool results are shortened.
+    """
+    full = step_type == "final_answer" and isinstance(result, str)
     entry = AuditEntry(
         run_id=deps.run_id,
         ticket_id=deps.ticket_id,
@@ -92,7 +97,7 @@ def _record(
         step_type=step_type,
         tool=tool,
         arguments=arguments or {},
-        result=short(result),
+        result=result if full else short(result),
         depth=deps.depth if depth is None else depth,
         requests_used=requests_used,
     )
