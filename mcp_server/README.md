@@ -20,4 +20,6 @@ A tool returns `{"error": "..."}` instead of raising, for example when the ticke
 
 ## Running
 
-Not wired up yet. When it is, it runs over stdio with `.venv/bin/python mcp_server/server.py`.
+The server is connected through `.mcp.json` at the project root, which registers it as `campus-customs` and launches it over stdio with `.venv/bin/python mcp_server/server.py`. The paths are relative, so it works in any clone that has the project's `.venv`. Claude Code starts the server automatically when it opens the project.
+
+A smoke test of all 3 tools against the current data (tickets 101, 102 and 103) is saved in `output/mcp_smoke.json`, with each prompt, the tool called and its actual output.

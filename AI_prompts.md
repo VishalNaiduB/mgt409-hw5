@@ -27,6 +27,16 @@ Also write a short `mcp_server/README.md` explaining what the MCP server is for,
 
 ## Problem 4
 
+Create .mcp.json at the project root so Claude Code can connect to the MCP server in mcp_server/server.py. Use the project’s .venv Python with relative paths, so it works on any machine that clones the repo. Log this under Problem 4 in AI_prompts.md.
+
+Use the campus-customs MCP tool to check whether ticket 101 can be fulfilled.
+
+Use the campus-customs MCP tool to check the rent for ticket 102: when it’s due and what it would leave in checking.
+
+Use the campus-customs MCP tool to get the facts for quoting the bulk order in ticket 103.
+
+Save those three MCP tool calls in output/mcp_smoke.json: for each, the exact prompt I asked, the tool name, and the tool’s actual output. Update mcp_server/README.md, which still says the server isn’t wired up, to explain it’s connected through .mcp.json. Log my Problem 4 prompts in AI_prompts.md, then commit as “P4”.
+
 ## Problem 5
 
 ## Problem 6
